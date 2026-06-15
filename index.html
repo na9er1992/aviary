@@ -1,0 +1,2452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Aviary Ledger</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080c0a;--surface:#0f1410;--surface2:#161d17;--border:#1e271f;--text:#d4e8d6;--muted:#4a5e4c;--p1:#5fbf8a;--p2:#e8a84a;--p3:#b07de8;--p4:#5aabdf;--danger:#e85a5a;--success:#4caf76;--warn:#f0c040;--cur:#5fbf8a}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;max-width:500px;margin:0 auto;padding-bottom:120px}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.35}
+.hdr{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);padding:18px 18px 12px;z-index:100}
+.hdr-eye{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:3px}
+.hdr-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;letter-spacing:-0.5px;margin-bottom:10px}
+.hdr-title span{color:var(--cur)}
+.date-disp{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:10px}
+.date-disp strong{color:var(--cur)}
+.cage-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.cage-row::-webkit-scrollbar{display:none}
+.cpill{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.cpill.active{border-color:var(--cur);background:color-mix(in srgb,var(--cur) 15%,transparent);color:var(--cur)}
+.alert-bar{padding:0 18px}
+.alert{border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:11px;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:8px}
+.alert.warn{background:color-mix(in srgb,var(--warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);color:var(--warn)}
+.alert.danger{background:color-mix(in srgb,var(--danger) 12%,transparent);border:1px solid color-mix(in srgb,var(--danger) 30%,transparent);color:var(--danger)}
+.alert.info{background:color-mix(in srgb,var(--cur) 10%,transparent);border:1px solid color-mix(in srgb,var(--cur) 25%,transparent);color:var(--cur)}
+.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 18px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tbtn{padding:10px 0;margin-right:16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.tbtn.active{border-bottom-color:var(--cur);color:var(--cur)}
+.content{padding:14px 18px}
+.phase-row{display:flex;gap:7px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
+.phase-row::-webkit-scrollbar{display:none}
+.pbtn{padding:7px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.pbtn.active{border-color:var(--cur);background:color-mix(in srgb,var(--cur) 12%,var(--surface));color:var(--cur)}
+.phase-card{border-radius:14px;border:1px solid color-mix(in srgb,var(--cur) 25%,transparent);background:var(--surface2);padding:14px 16px;margin-bottom:12px}
+.pc-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.pc-icon{font-size:22px}
+.pc-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--cur);margin-bottom:2px}
+.pc-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#fff}
+.pc-meta{display:flex;gap:14px}
+.pc-meta span{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.phase-timer{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pt-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:3px}
+.pt-weeks{font-family:'DM Mono',monospace;font-size:15px;color:var(--cur);font-weight:600}
+.pt-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.pt-warn{color:var(--warn)!important}
+.pt-danger{color:var(--danger)!important}
+.pt-btns{display:flex;gap:6px}
+.pt-btn{background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:14px;padding:5px 10px;cursor:pointer;font-family:'DM Mono',monospace}
+
+/* ── Bottom navigation bar for flock-wide views ── */
+/* Push content above bottom nav */
+
+.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 12px}
+.week-nav button{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 8px;transition:color .15s}
+.week-nav button:hover{color:var(--text)}
+.wk-lbl{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);text-align:center}
+.wk-lbl small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+.day-row{border-radius:12px;border:1px solid var(--border);background:var(--surface);margin-bottom:8px;overflow:hidden;transition:border-color .2s}
+.day-row.today{border-color:var(--cur);background:color-mix(in srgb,var(--cur) 6%,var(--surface))}
+.day-hdr{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--border)}
+.day-name{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--muted);width:32px}
+.day-row.today .day-name{color:var(--cur)}
+.today-badge{font-size:9px;background:var(--cur);color:#000;border-radius:4px;padding:2px 6px;font-family:'DM Mono',monospace;font-weight:700;letter-spacing:1px}
+.done-badge{margin-left:auto;font-size:10px;color:var(--success);font-family:'DM Mono',monospace}
+.date-badge{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-left:auto}
+.day-body{padding:10px 13px}
+.task-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:9px}
+.task-row:last-child{margin-bottom:0}
+.chk{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin-top:1px}
+.chk.on{border-color:var(--cur);background:var(--cur)}
+.chk svg{display:none}
+.chk.on svg{display:block}
+.tsk-lbl{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:2px;letter-spacing:1px}
+.tsk-txt{font-size:12.5px;color:var(--text);line-height:1.5;transition:all .15s}
+.tsk-txt.done{color:var(--muted);text-decoration:line-through}
+.notes-row{margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.notes-lbl{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:4px;letter-spacing:1px}
+.notes-inp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;padding:7px 10px;resize:none;outline:none;transition:border-color .15s}
+.notes-inp:focus{border-color:var(--cur)}
+.sec-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.hist-week{margin-bottom:20px}
+.hist-wk-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.hist-row{display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--surface);border-radius:8px;margin-bottom:4px}
+.hist-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);width:86px;flex-shrink:0}
+.hist-dots{display:flex;gap:5px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
+.dot.on{background:var(--success)}
+.hist-note{font-size:11px;color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:4px}
+.hist-ptag{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);padding:2px 6px;border-radius:4px;flex-shrink:0}
+.temp-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.temp-today{display:flex;gap:10px;margin-bottom:12px}
+.temp-inp-wrap{flex:1}
+.temp-inp-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:4px}
+.temp-inp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;font-family:'DM Mono',monospace;padding:8px 10px;outline:none;transition:border-color .15s;-moz-appearance:textfield}
+.temp-inp::-webkit-inner-spin-button,.temp-inp::-webkit-outer-spin-button{-webkit-appearance:none}
+.temp-inp:focus{border-color:var(--cur)}
+.temp-save-btn{align-self:flex-end;background:var(--cur);border:none;border-radius:8px;color:#000;font-size:12px;font-family:'DM Mono',monospace;font-weight:600;padding:9px 14px;cursor:pointer}
+.temp-hist-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.temp-hist-row:last-child{border-bottom:none}
+.temp-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.temp-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:600}
+.t-hot{color:var(--danger)}.t-warn{color:var(--warn)}.t-ok{color:var(--success)}
+.clutch-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.clutch-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.clutch-title{font-family:'DM Mono',monospace;font-size:11px;color:var(--cur);font-weight:600}
+.clutch-body{padding:12px 14px}
+.egg-grid-hdr{display:grid;grid-template-columns:24px 1fr 92px 52px 34px;gap:6px;margin-bottom:6px}
+.egg-grid-hdr span{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px}
+.egg-row{display:grid;grid-template-columns:24px 1fr 92px 52px 34px;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.egg-row:last-child{border-bottom:none}
+.egg-num{font-family:'DM Mono',monospace;color:var(--muted);font-size:11px}
+.egg-inp{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:'DM Mono',monospace;padding:4px 6px;width:100%;outline:none}
+.egg-inp:focus{border-color:var(--cur)}
+.egg-sel{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:'DM Mono',monospace;padding:4px 6px;width:100%;outline:none}
+.egg-sel option{background:#111}
+.egg-hatch{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.egg-hatch.fertile{color:var(--success)}.egg-hatch.hatched{color:var(--p3)}.egg-hatch.clear{color:var(--danger)}
+.add-egg-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;margin-top:8px;transition:all .15s}
+.add-egg-btn:hover{border-color:var(--cur);color:var(--cur)}
+.weight-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.weight-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:10px}
+.w-inp-wrap{flex:1}
+.w-inp-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:4px}
+.w-inp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'DM Mono',monospace;padding:7px 10px;outline:none;-moz-appearance:textfield}
+.w-inp::-webkit-inner-spin-button,.w-inp::-webkit-outer-spin-button{-webkit-appearance:none}
+.w-inp:focus{border-color:var(--cur)}
+.w-btn{background:var(--cur);border:none;border-radius:8px;color:#000;font-size:11px;font-family:'DM Mono',monospace;font-weight:600;padding:8px 12px;cursor:pointer}
+.wlog-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.wlog-row:last-child{border-bottom:none}
+.wl-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.wl-val{font-family:'DM Mono',monospace;font-weight:600}
+.wl-up{color:var(--success)}.wl-dn{color:var(--danger)}
+.stock-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.stock-hdr{padding:10px 14px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px}
+.stock-row{display:grid;grid-template-columns:1fr 80px 44px;gap:8px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border)}
+.stock-row:last-child{border-bottom:none}
+.stock-name{font-size:13px;color:var(--text)}
+.s-inp{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;padding:5px 8px;width:100%;outline:none;-moz-appearance:textfield;text-align:right}
+.s-inp::-webkit-inner-spin-button,.s-inp::-webkit-outer-spin-button{-webkit-appearance:none}
+.s-inp:focus{border-color:var(--cur)}
+.s-inp.low{color:var(--danger)!important;border-color:color-mix(in srgb,var(--danger) 40%,transparent)!important}
+.s-unit{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.qc-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px}
+.qc-icon{font-size:20px;flex-shrink:0}
+.qc-title{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:#e8c97a;margin-bottom:4px}
+.qc-desc{font-size:12.5px;color:#999;line-height:1.6}
+.prep-table{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:18px}
+.prep-hdr{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;padding:12px 14px 8px;border-bottom:1px solid var(--border)}
+.prep-row{display:grid;grid-template-columns:1fr 40px 80px;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border)}
+.prep-row:last-child{border-bottom:none}
+.prep-row.total{background:var(--surface2)}
+.pi{font-size:13px;color:var(--text)}.pr{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}.pq{font-size:12px;color:var(--p2);font-family:'DM Mono',monospace}
+.export-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:1px solid var(--cur);background:color-mix(in srgb,var(--cur) 10%,transparent);color:var(--cur);font-size:13px;font-family:'DM Mono',monospace;cursor:pointer;margin-top:16px;transition:all .15s}
+.export-btn:hover{background:color-mix(in srgb,var(--cur) 20%,transparent)}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px}
+.empty .ei{font-size:32px;margin-bottom:12px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.content>*{animation:fadeUp .2s ease forwards}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:2000;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeUp .15s ease}
+/* NEW TAB STYLES */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.card-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--cur);letter-spacing:2px;margin-bottom:10px}
+.form-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:10px}
+.form-field{flex:1}
+.form-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:4px}
+.finp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;padding:8px 10px;outline:none;transition:border-color .15s}
+.finp:focus{border-color:var(--cur)}
+select.finp{cursor:pointer}
+select.finp option{background:#111}
+.btn2{padding:9px 14px;border-radius:9px;border:none;font-size:12px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn2.pri{background:var(--cur);color:#000}
+.btn2.ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn2.dng{background:var(--danger);color:#fff}
+.btn2.full{width:100%;justify-content:center}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.stat-val{font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:var(--cur);margin-bottom:2px}
+.stat-lbl{font-size:11px;color:var(--muted)}
+.rbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.rbar-label{font-size:12px;color:var(--text);width:90px;flex-shrink:0}
+.rbar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.rbar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.rbar-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);width:34px;text-align:right}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;padding:7px 9px;border-bottom:1px solid var(--border);text-align:left}
+.tbl td{padding:8px 9px;border-bottom:1px solid var(--border);color:var(--text)}
+.tbl tr:last-child td{border-bottom:none}
+.hlog-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.hlog-row:last-child{border-bottom:none}
+.hlog-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:56px;flex-shrink:0;margin-top:2px}
+.hbadge{font-size:9px;font-family:'DM Mono',monospace;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.hb-ok{background:color-mix(in srgb,var(--success) 20%,transparent);color:var(--success)}
+.hb-med{background:color-mix(in srgb,var(--p3) 20%,transparent);color:var(--p3)}
+.hb-warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+.mstone-row{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.mstone-row:last-child{border-bottom:none}
+.mstone-day{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);width:48px;flex-shrink:0}
+.mstone-txt{font-size:12.5px;color:var(--text);flex:1}
+.modal-bx{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-ttl{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px}
+.modal-msg{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.modal-inp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;padding:10px 12px;outline:none;margin-bottom:14px}
+.modal-inp:focus{border-color:var(--cur)}
+.modal-btns{display:flex;gap:8px}
+.modal-btn{flex:1;padding:11px;border-radius:9px;border:none;font-size:13px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer}
+.modal-btn.cancel{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.modal-btn.ok{background:var(--cur);color:#000}
+.modal-btn.danger{background:var(--danger);color:#fff}
+
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE LAYOUT — PORTRAIT & LANDSCAPE
+   All responsive rules in one place, no conflicts.
+   ═══════════════════════════════════════════════════ */
+
+/* ── Base layout structures (no orientation assumption) ── */
+.app-shell{display:flex;flex-direction:column;min-height:100vh;}
+.app-header{flex-shrink:0;}
+.app-body{flex:1;display:flex;flex-direction:column;}
+.app-sidebar{display:contents;} /* portrait: sidebar is transparent, children flow normally */
+.app-main{flex:1;}
+
+/* ══════════════════════════════════
+   PORTRAIT MODE (default / narrow)
+   Tabs scroll horizontally at top.
+   Bottom nav fixed at bottom.
+   ══════════════════════════════════ */
+@media (orientation:portrait),(max-width:767px){
+  .app-shell{display:block;}
+  .app-body{display:block;}
+  .app-sidebar{display:contents;}
+  .app-main{display:block;}
+
+  .tabs{
+    display:flex;flex-direction:row;
+    border-bottom:1px solid var(--border);
+    padding:0 18px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar{display:none;}
+  .tbtn{
+    padding:10px 0;margin-right:16px;
+    background:none;border:none;
+    border-bottom:2px solid transparent;
+    border-left:none;
+    color:var(--muted);font-size:11px;
+    font-family:'DM Mono',monospace;
+    cursor:pointer;transition:all .15s;
+    white-space:nowrap;flex-shrink:0;
+    text-align:left;
+  }
+  .tbtn.active{
+    border-bottom-color:var(--cur);
+    color:var(--cur);
+    border-left-color:transparent;
+    background:none;
+  }
+
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;
+    height:58px;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    border-right:none;
+    display:flex;flex-direction:row;
+    align-items:stretch;
+    z-index:1000;
+    width:auto;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .bnav-btn{
+    flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:2px;background:none;border:none;
+    border-top:2px solid transparent;
+    border-left:none;
+    color:var(--muted);font-family:'DM Mono',monospace;
+    font-size:9px;cursor:pointer;transition:color .15s;
+    padding:6px 4px;
+  }
+  .bnav-btn.active{color:var(--cur);border-top-color:var(--cur);background:none;border-left-color:transparent;}
+  .bnav-icon{font-size:18px;line-height:1;}
+
+  .content{padding:14px 18px 74px;} /* 74px = bottom nav + safe area */
+}
+
+/* Portrait tablet wider content */
+@media (orientation:portrait) and (min-width:600px){
+  .content{padding:16px 24px 74px;}
+  .modal-bx{max-width:460px;}
+  .stat-grid{grid-template-columns:1fr 1fr 1fr;}
+}
+
+/* ══════════════════════════════════
+   LANDSCAPE MODE (wide screen)
+   Sidebar on left with vertical tabs.
+   Main content scrolls on right.
+   ══════════════════════════════════ */
+@media (orientation:landscape) and (min-width:600px){
+  .app-shell{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
+  .app-header{flex-shrink:0;}
+  .app-body{flex:1;display:flex;flex-direction:row;overflow:hidden;min-height:0;}
+  .app-sidebar{
+    display:flex;flex-direction:column;
+    width:190px;flex-shrink:0;
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    overflow-y:auto;
+    height:100%;
+  }
+  .app-main{
+    flex:1;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    height:100%;
+  }
+
+  .tabs{
+    display:flex;flex-direction:column;
+    border-bottom:none;border-right:none;
+    padding:6px 0;overflow-x:visible;
+    overflow-y:visible;flex:1;
+  }
+  .tbtn{
+    display:block;width:100%;
+    padding:10px 16px;margin-right:0;
+    background:none;border:none;
+    border-bottom:none;
+    border-left:2px solid transparent;
+    color:var(--muted);font-size:11px;
+    font-family:'DM Mono',monospace;
+    cursor:pointer;transition:all .15s;
+    white-space:nowrap;text-align:left;
+  }
+  .tbtn.active{
+    border-left-color:var(--cur);
+    border-bottom-color:transparent;
+    color:var(--cur);
+    background:color-mix(in srgb,var(--cur) 8%,transparent);
+  }
+  .tbtn:hover{background:color-mix(in srgb,var(--cur) 5%,transparent);}
+
+  .bottom-nav{
+    position:relative;bottom:auto;left:auto;right:auto;
+    width:190px;height:auto;
+    flex-direction:column;
+    border-top:1px solid var(--border);
+    border-right:none;
+    padding-bottom:0;
+    flex-shrink:0;
+  }
+  .bnav-btn{
+    display:flex;flex-direction:row;
+    justify-content:flex-start;align-items:center;
+    gap:8px;padding:11px 16px;
+    border-top:none;
+    border-left:2px solid transparent;
+    font-size:11px;flex:none;
+  }
+  .bnav-btn.active{
+    border-left-color:var(--cur);
+    border-top-color:transparent;
+    color:var(--cur);
+    background:color-mix(in srgb,var(--cur) 8%,transparent);
+  }
+  .bnav-icon{font-size:15px;line-height:1;}
+
+  .content{padding:14px 20px 20px;} /* no bottom nav offset needed */
+  .stat-grid{grid-template-columns:1fr 1fr 1fr 1fr;}
+  .modal-bx{max-width:480px;}
+}
+
+/* Large landscape tablet 10"+ */
+@media (orientation:landscape) and (min-width:900px){
+  .app-sidebar,.bottom-nav{width:210px;}
+  .content{padding:16px 28px 20px;}
+  .stat-grid{grid-template-columns:1fr 1fr 1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- Header — always on top in both orientations -->
+  <div class="app-header">
+    <div class="hdr">
+      <div class="hdr-eye">Exhibition Budgerigar Protocol</div>
+      <div class="hdr-title">Aviary <span>Ledger</span></div>
+      <div class="date-disp" id="dateDisp"></div>
+      <div class="cage-row" id="cageRow"></div>
+      <div id="cageManage" style="margin-top:6px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)"></div>
+    </div>
+    <div class="alert-bar" id="alertBar"></div>
+  </div>
+
+  <!-- Body: sidebar (tabs) + main content -->
+  <div class="app-body">
+    <div class="app-sidebar">
+      <div class="tabs">
+        <button class="tbtn" data-tab="tracker" onclick="switchTab('tracker')">📋 Tracker</button>
+        <button class="tbtn" data-tab="birds" onclick="switchTab('birds')">🐦 Birds</button>
+        <button class="tbtn" data-tab="clutch" onclick="switchTab('clutch')">🥚 Clutch</button>
+        <button class="tbtn" data-tab="health" onclick="switchTab('health')">💊 Health</button>
+        <button class="tbtn" data-tab="analytics" onclick="switchTab('analytics')">📊 Reports</button>
+        <button class="tbtn" data-tab="history" onclick="switchTab('history')">📅 History</button>
+        <button class="tbtn" data-tab="weights" onclick="switchTab('weights')">⚖️ Weights</button>
+        <button class="tbtn" data-tab="temp" onclick="switchTab('temp')">🌡️ Temp</button>
+        <button class="tbtn" data-tab="chop" onclick="switchTab('chop')">🥬 Chop</button>
+        <button class="tbtn" data-tab="stock" onclick="switchTab('stock')">📦 Stock</button>
+        <button class="tbtn" data-tab="qc" onclick="switchTab('qc')">⚗️ QC</button>
+      </div>
+      <nav class="bottom-nav" id="bottomNav">
+        <button class="bnav-btn" data-bnav="birdreport" onclick="switchTab('birdreport')"><span class="bnav-icon">📋</span>All Birds</button>
+      </nav>
+    </div>
+
+    <!-- Main scrollable content -->
+    <div class="app-main">
+      <div class="content" id="mainContent"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+// Cages are dynamic — stored as a JSON list of names. Defaults to 4 if none saved.
+let CAGES=(()=>{
+  try{const v=JSON.parse((window.localStorage||{getItem:()=>null}).getItem('av|cagelist'));if(Array.isArray(v)&&v.length)return v;}catch{}
+  return['Cage 1','Cage 2','Cage 3','Cage 4'];
+})();
+function saveCageList(){try{(window.localStorage||{setItem:()=>{}}).setItem('av|cagelist',JSON.stringify(CAGES));}catch(e){}}
+const DAY_NAMES=['Sat','Sun','Mon','Tue','Wed','Thu','Fri'];
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PHASES={
+  1:{name:'Resting & Maintenance',icon:'🌿',dur:'4–6 Weeks',max:6,light:'10–11 hrs',accent:'#5fbf8a',
+    s:{Sat:{sf:'1 Heaping tbsp Plain Platform C Chop Base (No Breedmax/No Mung)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Baseline flush'},
+       Sun:{sf:'No softfood — Digestive tract rest',sd:'3 tbsp Platform A + 1 tbsp Platform B (Red Millet)',wt:'Pure Water Only'},
+       Mon:{sf:'No softfood — Digestive tract rest',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin + cuttlebone cover minerals & vitamins (free-choice daily)'},
+       Tue:{sf:'No softfood — Digestive tract rest',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Kidney clearing run'},
+       Wed:{sf:'1 Heaping tbsp Plain Platform C Chop Base (No Breedmax/No Mung)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only'},
+       Thu:{sf:'No softfood — Digestive tract rest',sd:'3 tbsp Platform A + 1 tbsp Platform B (Red Millet)',wt:'Pure Water Only'},
+       Fri:{sf:'No softfood — Digestive tract rest',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Kidney clearing run'}}},
+  2:{name:'Breeding Conditioning',icon:'🔥',dur:'3–4 Weeks',max:4,light:'14 hrs',accent:'#e8a84a',
+    s:{Sat:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + ½ tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Pure Water Only'},
+       Sun:{sf:'No softfood — Hormone balancing',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only'},
+       Mon:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Sprouted Mung (No Breedmax)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only'},
+       Tue:{sf:'No softfood — Prevent crop clutter',sd:'3 Level tbsp Platform A',wt:'Pure Water Only'},
+       Wed:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + ½ tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Pure Water Only'},
+       Thu:{sf:'No softfood — Hormone balancing',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only'},
+       Fri:{sf:'No softfood — Pre-clutch system clear',sd:'3 Level tbsp Platform A',wt:'Pure Water Only'}},
+    s2:{Sat:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + ½ tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Ornisol Sel E: Fertility maintenance dose. Flush at 12hr'},
+       Sun:{sf:'No softfood — Hormone balancing',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only — Kidney flush after Ornisol'},
+       Mon:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Sprouted Mung (No Breedmax)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin + cuttlebone supply pre-lay calcium (free-choice)'},
+       Tue:{sf:'No softfood — Prevent crop clutter',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Absorption & kidney rest day'},
+       Wed:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + ½ tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Ornisol Sel E: Second weekly E/Se dose. Flush at 12hr'},
+       Thu:{sf:'No softfood — Hormone balancing',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only — Belvimin + cuttlebone supply pre-lay calcium (free-choice)'},
+       Fri:{sf:'No softfood — Pre-clutch system clear',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Pre-weekend kidney flush'}}},
+  3:{name:'Incubation',icon:'🥚',dur:'~18 Days',max:3,light:'14 hrs',accent:'#b07de8',
+    s:{Sat:{sf:'1 Heaping tbsp Plain Platform C (light — no Breedmax/Mung)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — sitting hen draws calcium from Belvimin + cuttlebone as needed'},
+       Sun:{sf:'No softfood — Sitting hen rest',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only'},
+       Mon:{sf:'1 Heaping tbsp Plain Platform C (light)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Kidney rest'},
+       Tue:{sf:'No softfood — Sitting hen rest',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin + cuttlebone cover calcium (free-choice)'},
+       Wed:{sf:'1 Heaping tbsp Plain Platform C (light)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin covers parent vitamins (free-choice)'},
+       Thu:{sf:'No softfood — Sitting hen rest',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only'},
+       Fri:{sf:'No softfood — Sitting hen rest',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — System flush'}}},
+  4:{name:'Chick Rearing',icon:'🐣',dur:'5–6 Weeks',max:7,light:'14 hrs',accent:'#e064a0',
+    s:{Sat:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + 1 Level tsp Sprouted Mung (↑ if >3 chicks)',sd:'3 Level tbsp Platform A (+1 tbsp if >3 chicks)',wt:'Pure Water Only — Belvimin + cuttlebone cover heavy chick-rearing calcium (free-choice). Top up Belvimin dish twice daily during peak feeding'},
+       Sun:{sf:'No softfood — Digestive resting window',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only'},
+       Mon:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + 1 Level tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — ensure Belvimin dish is full (chicks need steady calcium)'},
+       Tue:{sf:'No softfood — Digestive resting window',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Clear out cycle'},
+       Wed:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + 1 Level tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin covers parent + chick vitamins (free-choice)'},
+       Thu:{sf:'No softfood — Digestive resting window',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only'},
+       Fri:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + 1 Level tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — keep Belvimin + cuttlebone topped up'}}},
+  5:{name:'Molting Protocol',icon:'🪶',dur:'6–8 Weeks',max:8,light:'10–11 hrs',accent:'#5aabdf',
+    s:{Sat:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + ½ tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Muta-Vit: 1 level measure per 250ml. Flush at 12hr'},
+       Sun:{sf:'No softfood — System rest cycle',sd:'3 tbsp Platform A + 1 tbsp Platform B (Red Millet)',wt:'Pure Water Only'},
+       Mon:{sf:'No softfood — System rest cycle',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin + cuttlebone cover quill-growth calcium (free-choice)'},
+       Tue:{sf:'No softfood — System rest cycle',sd:'3 Level tbsp Platform A',wt:'Pure Water Only'},
+       Wed:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + ½ tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Muta-Vit: Support active pinfeather splitting. Font clean at 12hr'},
+       Thu:{sf:'No softfood — System rest cycle',sd:'3 tbsp Platform A + 1 tbsp Platform B (Red Millet)',wt:'Pure Water Only'},
+       Fri:{sf:'No softfood — System rest cycle',sd:'3 Level tbsp Platform A',wt:'Pure Water Only'}}},
+  6:{name:'Young Bird (Growth)',icon:'🐤',dur:'Until ~6–10 months',max:26,light:'10–11 hrs',accent:'#d4a72e',
+    s:{Sat:{sf:'1 Heaping tbsp Platform C Mash + ¼ tsp Breedmax (growth protein)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin + cuttlebone cover growth calcium (free-choice)'},
+       Sun:{sf:'No softfood — Digestive rest',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only'},
+       Mon:{sf:'1 Heaping tbsp Platform C Mash (no Breedmax)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin covers growth vitamins (free-choice)'},
+       Tue:{sf:'No softfood — Digestive rest',sd:'3 Level tbsp Platform A',wt:'Pure Water Only'},
+       Wed:{sf:'1 Heaping tbsp Platform C Mash + ¼ tsp Breedmax (growth protein)',sd:'3 Level tbsp Platform A',wt:'Muta-Vit: Juvenile molt feather support. Flush at 12hr'},
+       Thu:{sf:'No softfood — Digestive rest',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only'},
+       Fri:{sf:'No softfood — Digestive rest',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin + cuttlebone cover skeletal calcium (free-choice)'}}},
+  7:{name:'Show Prep (Exhibition)',icon:'🏆',dur:'2–3 Weeks before show',max:3,light:'11–12 hrs',accent:'#c0a020',
+    s:{Sat:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Muta-Vit powder (feather sheen)',sd:'3 Level tbsp Platform A',wt:'Muta-Vit: Final feather conditioning. Flush at 12hr',extra:'🛁 Light mist bath AM · 🪧 Show-cage training 15 min'},
+       Sun:{sf:'No softfood — Keep gut clean for transport',sd:'3 Level tbsp Platform A',wt:'Pure Water Only',extra:'🪧 Show-cage training 15 min · check spots/mask'},
+       Mon:{sf:'1 Heaping tbsp Platform C Mash (light)',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Belvimin covers condition vitamins (free-choice)',extra:'🛁 Mist bath AM · 🪧 Show-cage training'},
+       Tue:{sf:'No softfood — Gut rest',sd:'3 Level tbsp Platform A',wt:'Pure Water Only',extra:'🪧 Show-cage training · flight time for tone'},
+       Wed:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Muta-Vit powder',sd:'3 Level tbsp Platform A',wt:'Muta-Vit: Feather sheen. Flush at 12hr',extra:'🛁 Mist bath AM · 🪧 Show-cage training'},
+       Thu:{sf:'No softfood — Keep clean pre-show',sd:'3 Level tbsp Platform A',wt:'Probiotic/Plain Water — settle gut for transport',extra:'🪧 Final show-cage practice · spot check'},
+       Fri:{sf:'No softfood — Travel-light gut',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — clean for transport',extra:'🚗 Pre-show: NO bath (let feather settle) · pack cage, water, seed'}}}
+};
+const STOCK_ITEMS=[
+  {key:'platform_a',name:'Platform A Seed Mix',unit:'kg',low:0.5},
+  {key:'platform_b',name:'Platform B Red Millet',unit:'kg',low:0.2},
+  {key:'breedmax',name:'Breedmax',unit:'g',low:50},
+  {key:'muta_vit',name:'Muta-Vit',unit:'g',low:30},
+  {key:'calcium_d3',name:'Liquid Calcium + D3 (laying backup)',unit:'ml',low:50},
+  {key:'ornisol',name:'Ornisol Sel E',unit:'ml',low:30},
+  {key:'multivit',name:'Multivitamin (rarely needed now)',unit:'ml',low:30},
+  {key:'belvimin',name:'Beyers Belvimin (daily free-choice)',unit:'g',low:200},
+  {key:'cuttlebone',name:'Cuttlebone',unit:'pcs',low:2},
+  {key:'eggfood',name:'Commercial Eggfood',unit:'g',low:100},
+  {key:'mung_beans',name:'Mung Beans (Dry)',unit:'g',low:100}
+];
+// Comprehensive exhibition budgerigar colours, mutations & varieties (grouped)
+const BIRD_COLOR_GROUPS={
+  'Green series (normal)':['Light Green','Dark Green','Olive Green','Grey Green','Light Grey Green','Olive Grey Green'],
+  'Blue series (normal)':['Skyblue','Cobalt','Mauve','Violet','Grey (blue)','Sky Violet','Cobalt Violet','Mauve Violet'],
+  'Yellow / Whiteface base':['Yellowface Blue (Type 1)','Yellowface Blue (Type 2)','Goldenface','Whiteface'],
+  'Dilute & Greywing':['Greywing Green','Greywing Blue','Full-body Greywing','Dilute (Suffused) Green','Dilute Blue','Clearwing Green (Yellow-wing)','Clearwing Blue (White-wing)'],
+  'Cinnamon & related':['Cinnamon Green','Cinnamon Blue','Cinnamon Grey Green','Cinnamon Grey'],
+  'Opaline':['Opaline Green','Opaline Blue','Opaline Cinnamon','Opaline Grey Green','Opaline Grey'],
+  'Spangle':['Single Factor Spangle','Double Factor Spangle','Opaline Spangle','Yellowface Spangle'],
+  'Dominant & Recessive Pied':['Dominant Pied (Banded)','Dominant Pied (Variable)','Recessive Pied (Danish)','Clearflight Pied','Dark-eyed Clear'],
+  'Lutino / Albino / Inos':['Lutino','Albino','Creamino','Lacewing Yellow','Lacewing White'],
+  'Crested':['Tufted Crest','Half-circular Crest','Full-circular Crest'],
+  'Texas / Yellow-faced clearbody':['Texas Clearbody','Easley Clearbody'],
+  'Rare / other factors':['Dark-eyed Clear','Saddleback','Mottled','Faded','Dominant Grey','Anthracite','Slate','Fallow (English)','Fallow (German)','Fallow (Scottish)','Brownwing','Blackface'],
+  'Unclassified':['Unknown / TBD','Other']
+};
+// Flat list for any code that needs a simple array
+const BIRD_COLORS=Object.values(BIRD_COLOR_GROUPS).flat();
+function birdColorOptions(selected){
+  let h='';
+  for(const[group,colors]of Object.entries(BIRD_COLOR_GROUPS)){
+    h+='<optgroup label="'+group+'">';
+    colors.forEach(c=>{h+='<option'+(selected===c?' selected':'')+'>'+c+'</option>';});
+    h+='</optgroup>';
+  }
+  return h;
+}
+const RING_COLORS=['Blue','Red','Green','Yellow','White','Black','Orange','Purple','Silver','Pink','Grey','Gold'];
+const HEALTH_TYPES=['✓ Routine check','💊 Medication','🩺 Vet visit','⚠ Illness noted','🪲 Parasite treatment','📝 Observation'];
+const CHICK_MILESTONES=[
+  {day:1,text:'Hatch — confirm alive, remove clear eggs'},
+  {day:3,text:'Pin feathers emerging, eyes visible'},
+  {day:7,text:'First week — weigh daily if possible'},
+  {day:10,text:'Eyes fully open, feather sheaths breaking'},
+  {day:14,text:'Two weeks — crop capacity growing fast'},
+  {day:21,text:'Three weeks — feathers splitting sheaths'},
+  {day:28,text:'Four weeks — brancher stage, nearly feathered'},
+  {day:35,text:'Weaning begins — scatter seed on cage floor'},
+  {day:42,text:'Six weeks — independent feeding expected'}
+];
+// Age in months from DOB string
+function ageMonths(dobStr){
+  if(!dobStr)return null;
+  const d=new Date(dobStr+'T00:00:00');
+  const t=today();
+  let months=(t.getFullYear()-d.getFullYear())*12+(t.getMonth()-d.getMonth());
+  if(t.getDate()<d.getDate())months--;
+  return months;
+}
+function breedingAge(dobStr){const m=ageMonths(dobStr);return m===null?null:m>=10;}
+function ringColorHex(name){const map={Blue:'#4466cc',Red:'#cc3333',Green:'#44aa44',Yellow:'#cccc33',White:'#cccccc',Black:'#333333',Orange:'#cc6633',Purple:'#884499',Silver:'#aaaaaa'};return map[name]||'#666';}
+// Find a bird across all cages by name or ring, return {cageIdx, found}
+function findBirdRef(ref){
+  if(!ref)return null;
+  const r=ref.trim().toLowerCase();
+  for(let i=0;i<CAGES.length;i++){
+    const birds=ls.getJ(`av|birds|c${i}`,[]);
+    const idx=birds.findIndex(b=>b.ring&&b.ring.trim().toLowerCase()===r);
+    if(idx>=0)return{cageIdx:i,birdIdx:idx,bird:birds[idx]};
+  }
+  return null;
+}
+// Build a clickable parent chip — links if the parent is a registered bird, plain text if not
+function parentLink(symbol,ref){
+  const found=findBirdRef(ref);
+  if(found){
+    return `<span onclick="viewBirdByRef('${ref.replace(/'/g,"\\'")}')" style="cursor:pointer;background:color-mix(in srgb,var(--cur) 12%,transparent);border:1px solid color-mix(in srgb,var(--cur) 30%,transparent);border-radius:7px;padding:3px 9px;color:var(--cur);display:inline-flex;align-items:center;gap:4px">${symbol} ${ref} →</span>`;
+  }
+  return `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:3px 9px;color:var(--muted)">${symbol} ${ref}</span>`;
+}
+// Jump to a parent's record: switch to its cage and open its edit/info card
+function viewBirdByRef(ref){
+  const found=findBirdRef(ref);
+  if(!found){toast('Parent not in registry yet','warn');return;}
+  S.activeCage=found.cageIdx;
+  S.activePhase=getCagePhase(found.cageIdx);
+  S.activeTab='birds';
+  setAccent(PHASES[S.activePhase]?.accent||'#5fbf8a');
+  toast('Viewing '+ref+' in '+CAGES[found.cageIdx]);
+  renderAll();
+  // Briefly highlight by opening the edit modal so they see full info
+  setTimeout(()=>editBird(found.birdIdx),250);
+}
+
+// Platform C (soft food) = vegetable chop + eggfood + rusk (+ Breedmax on some days).
+// Vegetables ONLY go in on Platform C soft-food days. We DERIVE chop days from the
+// schedule itself: a day serves chop if its softfood text does NOT start with "No softfood".
+function chopDaysForPhase(p){
+  const sched=PHASES[p].s;
+  return DAY_NAMES.filter(d=>!sched[d].sf.startsWith('No softfood'));
+}
+const G_PER_TBSP=15;          // 1 heaping tbsp chop per pair ≈ 15g
+const TBSP_PER_PAIR=1;        // per soft-food day
+const WEEKS_PER_MONTH=4.345;
+const VEG_RATIOS=[['Zucchini',0.40],['Carrot',0.40],['Sweet Potato',0.20]];
+
+// STATE
+const S={activeCage:0,activePhase:1,activeTab:'tracker',weekOffset:0,birdFilter:'all',treeRing:null};
+
+// STORAGE
+// Safe storage — falls back to in-memory if localStorage is blocked (iOS Files app, private mode)
+const ls=(()=>{
+  const mem={};
+  let _ls=null;
+  function store(){
+    if(_ls!==null)return _ls;
+    try{localStorage.setItem('__t','1');localStorage.removeItem('__t');_ls=localStorage;return _ls;}
+    catch(e){_ls=false;return false;}
+  }
+  return{
+    get:k=>{try{const s=store();return s?s.getItem(k):mem[k]||null;}catch{return mem[k]||null;}},
+    set:(k,v)=>{try{const s=store();if(s)s.setItem(k,v);else mem[k]=v;}catch{mem[k]=v;}},
+    del:k=>{try{const s=store();if(s)s.removeItem(k);else delete mem[k];}catch{delete mem[k];}},
+    getJ:(k,d)=>{try{const v=JSON.parse(ls.get(k));return(v!==null&&v!==undefined)?v:d;}catch{return d;}},
+    setJ:(k,v)=>{ls.set(k,JSON.stringify(v));},
+    get length(){try{const s=store();return s?s.length:Object.keys(mem).length;}catch{return Object.keys(mem).length;}},
+    key:i=>{try{const s=store();return s?s.key(i):Object.keys(mem)[i];}catch{return Object.keys(mem)[i];}}
+  };
+})();
+
+// ---- Custom modal dialogs (reliable in standalone/home-screen mode where native confirm/prompt fail) ----
+let _modalOk=null, _modalPromptOk=null;
+function modalConfirm(title,msg,onOk,danger){
+  _modalOk=onOk;
+  let root=document.getElementById('modalRoot');
+  if(!root){root=document.createElement('div');root.id='modalRoot';document.body.appendChild(root);}
+  root.innerHTML=`<div class="modal-ov" onclick="if(event.target===this)closeModal()">
+    <div class="modal-bx">
+      <div class="modal-ttl">${title}</div>
+      ${msg?`<div class="modal-msg">${msg}</div>`:''}
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+        <button class="modal-btn ${danger?'danger':'ok'}" onclick="confirmModal()">${danger?'Delete':'OK'}</button>
+      </div>
+    </div></div>`;
+}
+function confirmModal(){closeModal();if(_modalOk){const f=_modalOk;_modalOk=null;f();}}
+function closeModal(){const r=document.getElementById('modalRoot');if(r)r.innerHTML='';_modalOk=null;_modalPromptOk=null;}
+function modalPrompt(title,defaultVal,onOk){
+  _modalPromptOk=onOk;
+  let root=document.getElementById('modalRoot');
+  if(!root){root=document.createElement('div');root.id='modalRoot';document.body.appendChild(root);}
+  root.innerHTML=`<div class="modal-ov" onclick="if(event.target===this)closeModal()">
+    <div class="modal-bx">
+      <div class="modal-ttl">${title}</div>
+      <input class="modal-inp" id="_in" value="${(defaultVal||'').replace(/"/g,'&quot;')}" autocomplete="off" onkeydown="if(event.key==='Enter')submitPrompt()">
+      <div class="modal-btns">
+        <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+        <button class="modal-btn ok" onclick="submitPrompt()">Save</button>
+      </div>
+    </div></div>`;
+  setTimeout(()=>{try{document.getElementById('_in').focus();document.getElementById('_in').select();}catch(e){}},50);
+}
+function submitPrompt(){const inp=document.getElementById('_in');const v=inp?inp.value:'';closeModal();if(_modalPromptOk){const f=_modalPromptOk;_modalPromptOk=null;f(v);}}
+function toast(msg){
+  let t=document.getElementById('_toast');
+  if(!t){t=document.createElement('div');t.id='_toast';document.body.appendChild(t);}
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--cur);color:#000;font-family:DM Mono,monospace;font-size:13px;font-weight:600;padding:11px 18px;border-radius:10px;z-index:3000;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;transition:opacity .2s';
+  requestAnimationFrame(()=>{t.style.opacity='1';});
+  clearTimeout(t._h);t._h=setTimeout(()=>{t.style.opacity='0';},1800);
+}
+const ck=(c,p,d,sl)=>`av|c${c}|p${p}|${d}|${sl}`;
+const getChk=(c,p,d,sl)=>ls.get(ck(c,p,d,sl))==='1';
+const setChk=(c,p,d,sl,v)=>ls.set(ck(c,p,d,sl),v?'1':'0');
+const getCagePhase=c=>parseInt(ls.get(`av|cage${c}|phase`)||'1');
+const setCagePhase=(c,p)=>ls.set(`av|cage${c}|phase`,p);
+const getPhaseStart=c=>ls.get(`av|cage${c}|pstart`)||'';
+const setPhaseStart=(c,d)=>ls.set(`av|cage${c}|pstart`,d);
+const getShowDate=c=>ls.get(`av|cage${c}|showdate`)||'';
+const setShowDate=(c,d)=>ls.set(`av|cage${c}|showdate`,d);
+const getEggDate=c=>ls.get(`av|cage${c}|eggdate`)||'';
+const setEggDate=(c,d)=>ls.set(`av|cage${c}|eggdate`,d);
+// Days from today until the show date for a cage. null if unset. 0 = show is today, negative = past.
+function daysToShow(c){
+  const s=getShowDate(c);if(!s)return null;
+  return Math.round((new Date(s+'T00:00:00')-today())/(24*3600*1000));
+}
+const getNotes=(c,d)=>ls.get(`av|notes|c${c}|${d}`)||'';
+const setNotes=(c,d,v)=>ls.set(`av|notes|c${c}|${d}`,v);
+
+// DATE HELPERS
+function today(){const d=new Date();d.setHours(0,0,0,0);return d}
+function fmtDate(d){return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function fmtDisp(d){return`${d.getDate()} ${MONTHS[d.getMonth()]}`}
+function pad(n){return String(n).padStart(2,'0')}
+function sameDay(a,b){return fmtDate(a)===fmtDate(b)}
+function getWeekDates(off=0){
+  // Always anchor to TODAY as the first row, then show 6 more days.
+  // offset shifts by 7-day blocks: +1 = next 7 days, -1 = previous 7 days.
+  const t=today();
+  const ws=new Date(t);
+  ws.setDate(t.getDate()+(off*7));
+  return DAY_NAMES.map((name,i)=>{
+    const d=new Date(ws);d.setDate(ws.getDate()+i);
+    // Day name must match the actual calendar day, not the fixed DAY_NAMES order
+    const realDayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const realName=realDayNames[d.getDay()];
+    return{name:realName,date:d,dateStr:fmtDate(d),isToday:sameDay(d,t)};
+  });
+}
+function weeksInPhase(c){
+  const s=getPhaseStart(c);if(!s)return null;
+  const diff=Math.floor((today()-new Date(s+'T00:00:00'))/(7*24*3600*1000));
+  return Math.max(0,diff);
+}
+// Days between a given date (yyyy-mm-dd) and the cage's phase start. null if not started.
+// 0 = the start day itself, 6 = the 7th day. Used for the 7-day loading window.
+function daysSinceStartForDate(c,dateStr){
+  const s=getPhaseStart(c);if(!s)return null;
+  const start=new Date(s+'T00:00:00'), d=new Date(dateStr+'T00:00:00');
+  return Math.floor((d-start)/(24*3600*1000));
+}
+function hatchDate(lay){if(!lay)return'';const d=new Date(lay+'T00:00:00');d.setDate(d.getDate()+18);return fmtDate(d)}
+
+function setAccent(c){if(document.documentElement)document.documentElement.style.setProperty('--cur',c);}
+
+// ALERTS
+function renderAlerts(){
+  const alerts=[];
+  CAGES.forEach((_,i)=>{
+    const p=getCagePhase(i),w=weeksInPhase(i);if(w===null)return;
+    if(p===6)return; // Young Bird is open-ended; no transition alarm
+    const max=PHASES[p].max;
+    const pname=p===3?'Incubation':p===4?'Chick Rearing':p===6?'Young':p===7?'Show Prep':'Phase '+p;
+    if(w>=max)alerts.push({t:'danger',m:`⚠ ${CAGES[i]}: Week ${w} of ${pname} — transition overdue!`});
+    else if(w>=max-1)alerts.push({t:'warn',m:`⏰ ${CAGES[i]}: Week ${w}/${max} — ${pname} ending soon`});
+  });
+  STOCK_ITEMS.forEach(item=>{
+    const v=parseFloat(ls.get(`av|stock|${item.key}`)||'999');
+    if(v<=item.low)alerts.push({t:'warn',m:`📦 Low stock: ${item.name} (${v}${item.unit})`});
+  });
+  const tv=ls.get(`av|temp|${fmtDate(today())}`);
+  if(tv&&parseFloat(tv)>=40)alerts.push({t:'danger',m:`🌡️ HEAT ALERT: ${tv}°C today — check cooling!`});
+  // Hatch approaching alert
+  CAGES.forEach((_,i)=>{
+    if(getCagePhase(i)===3){const ed=getEggDate(i);if(ed){const dth=Math.round((new Date(ed+'T00:00:00').setDate(new Date(ed+'T00:00:00').getDate()+18)-today())/(864e5));if(dth<=2&&dth>=0)alerts.push({t:'warn',m:`🐣 ${CAGES[i]}: Hatch ${dth===0?'TODAY':dth+'d away'} — prepare nest`});}}
+  });
+  // Fertility candling reminder — eggs 6–9 days old still marked Pending
+  CAGES.forEach((_,i)=>{
+    const cl=ls.getJ(`av|clutch|c${i}`,[]);
+    let pendingDue=[];
+    cl.forEach((c,ci)=>{
+      c.eggs.forEach((e,ei)=>{
+        if(e.layDate&&(!e.status||e.status==='unknown')){
+          const d=Math.round((today()-new Date(e.layDate+'T00:00:00'))/(864e5));
+          if(d>=6&&d<=9)pendingDue.push('E'+(ei+1));
+        }
+      });
+    });
+    if(pendingDue.length)alerts.push({t:'info',m:`🕯️ ${CAGES[i]}: Candle ${pendingDue.join(', ')} — ${pendingDue.length>1?'eggs are':'egg is'} 6+ days, check fertility`});
+    // Quick first-egg date fallback (Egg Laid button) if no clutch eggs logged
+    if(getCagePhase(i)===3&&!cl.some(c=>c.eggs.some(e=>e.layDate))){
+      const ed=getEggDate(i);
+      if(ed){
+        const d=Math.round((today()-new Date(ed+'T00:00:00'))/(864e5));
+        if(d>=6&&d<=9)alerts.push({t:'info',m:`🕯️ ${CAGES[i]}: First egg is ${d}d old — candle to check fertility`});
+      }
+    }
+  });
+  // Chick ringing reminder — hatched chicks at day 6–10 (ideal day 7) not yet ringed
+  CAGES.forEach((_,i)=>{
+    const cl=ls.getJ(`av|clutch|c${i}`,[]);
+    let ringDue=[],ringSoon=[],ringUrgent=[];
+    cl.forEach((c,ci)=>{
+      c.eggs.forEach((e,ei)=>{
+        if(e.status==='hatched'&&e.hatchedOn&&!e.ringed){
+          const age=Math.round((today()-new Date(e.hatchedOn+'T00:00:00'))/(864e5));
+          if(age>=6&&age<=8)ringDue.push('E'+(ei+1));
+          else if(age===5)ringSoon.push('E'+(ei+1));
+          else if(age>=9&&age<=10)ringUrgent.push('E'+(ei+1));
+        }
+      });
+    });
+    if(ringSoon.length)alerts.push({t:'info',m:`💍 ${CAGES[i]}: ${ringSoon.join(', ')} ready to ring tomorrow (day 6)`});
+    if(ringDue.length)alerts.push({t:'warn',m:`💍 ${CAGES[i]}: RING ${ringDue.join(', ')} now — ideal window (day 6–8)`});
+    if(ringUrgent.length)alerts.push({t:'danger',m:`💍 ${CAGES[i]}: Ring ${ringUrgent.join(', ')} TODAY — window closing (toes nearly too big)`});
+  });
+  // Millet in nest reminder — put spray millet in nest box at day 21 (chick 3 weeks old)
+  // so chicks start learning to eat independently
+  CAGES.forEach((_,i)=>{
+    const cl=ls.getJ(`av|clutch|c${i}`,[]);
+    let milletDue=[],milletOn=[];
+    cl.forEach(c=>{
+      c.eggs.forEach((e,ei)=>{
+        if(e.status==='hatched'&&e.hatchedOn){
+          const age=Math.round((today()-new Date(e.hatchedOn+'T00:00:00'))/(864e5));
+          if(age===21)milletDue.push('E'+(ei+1));
+          else if(age>21&&age<=35)milletOn.push('E'+(ei+1));
+        }
+      });
+    });
+    if(milletDue.length)alerts.push({t:'warn',m:`🌾 ${CAGES[i]}: E${milletDue.join(',')} is 3 weeks old — place spray millet in nest box today so chicks start learning to eat`});
+    else if(milletOn.length)alerts.push({t:'info',m:`🌾 ${CAGES[i]}: Millet in nest — keep spray millet available until chicks fledge (~week 6)`});
+  });
+  // Wood shavings refresh reminder — every 5 days during chick rearing to maintain grip
+  // and prevent splayed legs. Fire from hatch through fledging (~day 42)
+  CAGES.forEach((_,i)=>{
+    if(getCagePhase(i)!==4)return;
+    const cl=ls.getJ(`av|clutch|c${i}`,[]);
+    const hasChicks=cl.some(c=>c.eggs.some(e=>e.status==='hatched'&&e.hatchedOn));
+    if(!hasChicks)return;
+    const lastRefresh=ls.get(`av|shavings|c${i}`);
+    const daysSince=lastRefresh?Math.round((today()-new Date(lastRefresh+'T00:00:00'))/(864e5)):99;
+    if(daysSince>=5){
+      alerts.push({t:'warn',m:`🪵 ${CAGES[i]}: Refresh wood shavings in nest box — chicks need grip to prevent splayed legs (last: ${lastRefresh?lastRefresh:'never recorded'})`});
+    }
+  });
+  // Bird reaching breeding age — active cage only
+  ls.getJ(`av|birds|c${S.activeCage}`,[]).forEach(b=>{
+    if(b.dob){
+      const am=ageMonths(b.dob);
+      if(am===10){
+        const dob=new Date(b.dob+'T00:00:00');
+        const t=today();
+        const exactTurnDate=new Date(dob);
+        exactTurnDate.setMonth(dob.getMonth()+10);
+        const daysSinceTurn=Math.round((t-exactTurnDate)/(864e5));
+        if(daysSinceTurn>=0&&daysSinceTurn<=3){
+          alerts.push({t:'info',m:`🐦 ${b.ring||'Bird'} just reached 10 months — breeding age`});
+        }
+      }
+    }
+  });
+  const alertBar=document.getElementById('alertBar');
+  if(alertBar)alertBar.innerHTML=alerts.length
+    ?`<div style="padding:8px 18px 0">${alerts.map(a=>`<div class="alert ${a.t}">${a.m}</div>`).join('')}</div>`:'';
+}
+
+// RENDER
+function renderAll(){
+  try{
+    const d=new Date(),days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const el=id=>document.getElementById(id);
+    if(el('dateDisp'))el('dateDisp').innerHTML=`<strong>${days[d.getDay()]}</strong> · ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    if(el('cageRow'))el('cageRow').innerHTML=CAGES.map((c,i)=>`<button class="cpill${S.activeCage===i?' active':''}" onclick="selCage(${i})" ondblclick="renameCage(${i})">${c}</button>`).join('')+`<button class="cpill" style="border-style:dashed;color:var(--cur)" onclick="addCage()">+ Add</button>`;
+    if(el('cageManage'))el('cageManage').innerHTML=`${CAGES[S.activeCage]} · <span style="cursor:pointer;color:var(--cur)" onclick="renameCage(${S.activeCage})">✎ rename</span>${CAGES.length>1?` · <span style="cursor:pointer;color:var(--danger)" onclick="deleteCage(${S.activeCage})">🗑 delete</span>`:''}`;
+    renderAlerts();
+    setAccent(PHASES[S.activePhase]?.accent||'#5fbf8a');
+    document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===S.activeTab));
+    document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.toggle('active',b.dataset.bnav===S.activeTab));
+    const maps={tracker:rTracker,history:rHistory,birds:rBirds,birdreport:rBirdReport,health:rHealth,analytics:rAnalytics,clutch:rClutch,weights:rWeights,temp:rTemp,chop:rChop,stock:rStock,qc:rQC};
+    if(el('mainContent')){
+      try{el('mainContent').innerHTML=(maps[S.activeTab]||rTracker)();}
+      catch(tabErr){el('mainContent').innerHTML=`<div style="padding:20px;font-family:'DM Mono',monospace;font-size:12px;color:var(--danger)">Tab render error: ${tabErr.message}</div>`;}
+    }
+  }catch(e){
+    console.error('renderAll crash:',e.message,e.stack);
+    toast('⚠ Render error: '+e.message.substring(0,60),'warn');
+  }
+}
+
+function rTracker(){
+  const ph=PHASES[S.activePhase],wks=weeksInPhase(S.activeCage),weeks=getWeekDates(S.weekOffset);
+  const wS=weeks[0].date,wE=weeks[6].date,isCur=S.weekOffset===0;
+  // Phase 2 loading: first 7 DAYS from the phase start = Ornisol Sel E daily (applied per-day below).
+  // After day 7, the normal post-loading schedule (.s2) applies. Banner reflects current status.
+  const hasLoading = (S.activePhase===2 && ph.s2);
+  let loadingStatus='none'; // 'loading' | 'post' | 'notstarted'
+  if(hasLoading){
+    if(wks===null) loadingStatus='notstarted';
+    else {
+      const dToday=daysSinceStartForDate(S.activeCage,fmtDate(today()));
+      loadingStatus=(dToday!==null && dToday<7)?'loading':'post';
+    }
+  }
+  // Base schedule is now determined per-day inside the loop (different days in the same
+  // viewed week can be on different sides of the loading/post-loading boundary).
+  // loadingStatus still drives the banner (based on today).
+  const baseSched = ph.s; // fallback — overridden per-day below
+
+  // For Show Prep (phase 6), use a show-date countdown instead of the generic week timer.
+  const isShow = (S.activePhase===7);
+  const dShow = isShow ? daysToShow(S.activeCage) : null;
+  const showWeek = (dShow!==null && dShow>=0 && dShow<7); // final 7 days = real show week
+
+  let h=`<div class="phase-row">${[1,2,3,4,5,6,7].map(p=>`<button class="pbtn${S.activePhase===p?' active':''}" onclick="selPhase(${p})">${PHASES[p].icon} ${p===3?'Incub':p===4?'Rear':p===6?'Young':p===7?'Show':'P'+p}</button>`).join('')}</div>
+  <div class="phase-card"><div class="pc-top"><span class="pc-icon">${ph.icon}</span><div><div class="pc-label">PHASE ${S.activePhase}</div><div class="pc-name">${ph.name}</div></div></div>
+  <div class="pc-meta"><span>⏱ ${ph.dur}</span><span>☀️ ${ph.light}</span></div></div>`;
+  // Always-available free-choice reminder
+  h+=`<div style="display:flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--cur) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--cur) 20%,transparent);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--cur)">
+  <span style="font-size:14px">♾️</span><span>Always in cage: Belvimin (Ca+D3+vitamins) + cuttlebone — free choice</span></div>`;
+
+  if(isShow){
+    // Show-date picker + countdown
+    h+=`<div class="phase-timer"><div style="flex:1"><div class="pt-label">SHOW COUNTDOWN — ${CAGES[S.activeCage].toUpperCase()}</div>
+    ${dShow===null
+      ?`<div class="pt-weeks">No show date set</div><div class="pt-sub">Pick your competition date →</div>`
+      :dShow>0
+        ?`<div class="pt-weeks${showWeek?' pt-warn':''}">${dShow} day${dShow===1?'':'s'} to show</div>
+          <div class="pt-sub" style="color:${showWeek?'var(--warn)':'var(--muted)'}">Show: ${fmtDisp(new Date(getShowDate(S.activeCage)+'T00:00:00'))}${showWeek?' · 🏆 SHOW WEEK — final prep':' · conditioning phase'}</div>`
+        :dShow===0
+          ?`<div class="pt-weeks pt-warn">🏆 SHOW DAY!</div><div class="pt-sub" style="color:var(--warn)">Good luck — pack cage, seed & water</div>`
+          :`<div class="pt-weeks">Show passed</div><div class="pt-sub">Set a new date for the next show</div>`}
+    </div><div class="pt-btns"><input type="date" class="time-input" style="width:auto;font-size:12px;padding:6px 8px" value="${getShowDate(S.activeCage)}" onchange="setShow(this.value)"></div></div>`;
+
+    if(dShow!==null && dShow>=0){
+      if(showWeek){
+        h+=`<div class="alert warn" style="margin:0 0 12px">🏆 SHOW WEEK — ease conditioning, keep gut clean, settle feather. Friday = travel prep.</div>`;
+      } else {
+        h+=`<div class="alert" style="margin:0 0 12px;background:color-mix(in srgb,var(--cur) 12%,transparent);border:1px solid color-mix(in srgb,var(--cur) 30%,transparent);color:var(--cur)">✓ CONDITIONING — build feather sheen & show-cage calmness. Show week prep begins at 7 days out.</div>`;
+      }
+    }
+  } else {
+    h+=`<div class="phase-timer"><div style="flex:1"><div class="pt-label">PHASE ${S.activePhase} TIMER — ${CAGES[S.activeCage].toUpperCase()}</div>
+    ${wks===null?`<div class="pt-weeks">Not started</div><div class="pt-sub">Tap ▶ to begin tracking</div>`
+      :`<div class="pt-weeks${wks>=ph.max?' pt-danger':wks>=ph.max-1?' pt-warn':''}">Week ${wks+1}${ph.max<26?' / '+ph.max:''}</div>
+      <div class="pt-sub" style="color:${wks>=ph.max?'var(--danger)':wks>=ph.max-1?'var(--warn)':'var(--muted)'}">
+      Started ${fmtDisp(new Date(getPhaseStart(S.activeCage)+'T00:00:00'))} · ${wks>=ph.max?'⚠ Transition overdue!':ph.max>=26?'growth phase':wks>=ph.max-1?`${ph.max-wks} wk left — prepare next`:`${ph.max-wks} wk remaining`}</div>`}
+    </div><div class="pt-btns">${wks===null?`<button class="pt-btn" onclick="startPhase()">▶</button>`:`<button class="pt-btn" onclick="resetPhase()">↺</button>`}</div></div>`;
+  }
+
+  // Loading-week banner for Phase 2
+  if(hasLoading){
+    const dToday=wks!==null?daysSinceStartForDate(S.activeCage,fmtDate(today())):null;
+    if(loadingStatus==='loading'){
+      const left=7-(dToday||0);
+      h+=`<div class="alert warn" style="margin:0 0 12px">⚡ LOADING — Ornisol Sel E daily · day ${(dToday||0)+1} of 7 (${left} day${left===1?'':'s'} left)</div>`;
+    } else if(loadingStatus==='post'){
+      h+=`<div class="alert" style="margin:0 0 12px;background:color-mix(in srgb,var(--cur) 12%,transparent);border:1px solid color-mix(in srgb,var(--cur) 30%,transparent);color:var(--cur)">✓ POST-LOADING — Ornisol ~2×/week + Calcium+D3 before first egg</div>`;
+    } else {
+      h+=`<div class="alert warn" style="margin:0 0 12px">⚡ Press ▶ to start — then Ornisol Sel E runs daily for 7 days</div>`;
+    }
+    // Egg-laid button: show as soon as phase is started (day 0+).
+    // A hen can lay anytime — don't gate it behind loading completion.
+    if(wks!==null){
+      const eggDate=getEggDate(S.activeCage);
+      if(eggDate){
+        const ed=new Date(eggDate+'T00:00:00');
+        const daysSinceEgg=Math.round((today()-ed)/(864e5));
+        const expHatch=new Date(ed);expHatch.setDate(ed.getDate()+18);
+        h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:3px">🥚 FIRST EGG RECORDED</div>
+            <div style="font-size:13px;color:var(--text)">${fmtDisp(ed)} · day ${daysSinceEgg+1} of incubation</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">Expected hatch: ${fmtDisp(expHatch)}</div>
+          </div>
+          <button onclick="eggLaidClear()" style="background:none;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:11px;font-family:'DM Mono',monospace;padding:5px 9px;cursor:pointer">✕ Clear</button>
+        </div>`;
+      } else {
+        h+=`<button onclick="eggLaid()" style="width:100%;padding:13px;border-radius:12px;border:2px solid var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent);color:var(--gold);font-size:14px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+          🥚 First Egg Laid — tap to switch to Rearing
+        </button>`;
+      }
+    }
+  }
+  // Phase 3: show egg-laid info if it was recorded from Phase 2 jump
+  if(S.activePhase===3){
+    const eggDate=getEggDate(S.activeCage);
+    if(eggDate){
+      const ed=new Date(eggDate+'T00:00:00');
+      const daysSince=Math.round((today()-ed)/(864e5));
+      const expHatch=new Date(ed);expHatch.setDate(ed.getDate()+18);
+      const daysToHatch=Math.round((expHatch-today())/(864e5));
+      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:4px">🥚 INCUBATION TRACKER</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;color:var(--text)">First egg: ${fmtDisp(ed)} · Day ${daysSince+1}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">
+              ${daysToHatch>0?`Expected hatch: ${fmtDisp(expHatch)} (${daysToHatch}d)`:daysToHatch===0?'🐣 Expected hatch TODAY!':'🐣 Hatch overdue — check nest'}
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:${daysToHatch<=2?'var(--warn)':'var(--cur)'}">
+            ${daysToHatch>0?daysToHatch+'d':daysToHatch===0?'🐣':'!'}
+          </div>
+        </div>
+      </div>`;
+    }
+    // Hatch button — always show in Phase 3 so you can switch when chicks hatch
+    h+=`<button onclick="chicksHatched()" style="width:100%;padding:13px;border-radius:12px;border:2px solid var(--p3);background:color-mix(in srgb,var(--p3) 10%,transparent);color:var(--p3);font-size:14px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+      🐣 Chicks Hatched — switch to Rearing
+    </button>`;
+  }
+
+  h+=`<div class="week-nav"><button onclick="chgWeek(-1)">‹</button>
+  <div class="wk-lbl">${S.weekOffset===0?'📅 This Week':S.weekOffset===-1?'← Last Week':S.weekOffset===1?'→ Next Week':S.weekOffset>1?`+${S.weekOffset} weeks ahead`:`${Math.abs(S.weekOffset)}w ago`}<small>${fmtDisp(wS)} – ${fmtDisp(wE)}</small></div>
+  <button onclick="chgWeek(1)"${S.weekOffset>=4?' disabled style="opacity:.3"':''}>›</button></div>`;
+  weeks.forEach(({name,date,dateStr,isToday})=>{
+    // Per-day schedule: for Phase 2, pick s2 (post-loading) or s (loading/unstarted) based on
+    // this specific day's position relative to the phase start — not today's position.
+    let dayBaseSched = baseSched; // default fallback
+    if(hasLoading && ph.s2){
+      const dd=daysSinceStartForDate(S.activeCage,dateStr);
+      if(dd!==null && dd>=7){
+        dayBaseSched = ph.s2; // this day is past loading — use post-loading schedule
+      } else {
+        dayBaseSched = ph.s;  // this day is in loading window or before start
+      }
+    }
+    let sc=dayBaseSched[name];
+    // Per-day loading override: if this date is within the first 7 days of the phase, force Ornisol.
+    if(hasLoading){
+      const dd=daysSinceStartForDate(S.activeCage,dateStr);
+      if(dd!==null && dd>=0 && dd<7){
+        sc={...sc, wt:'Ornisol Sel E: Vit E + Selenium (loading day '+(dd+1)+'/7). Flush at 12hr'};
+      }
+    }
+    // Show Prep: mark the actual show day, and clarify Friday travel-prep only applies in real show week
+    let isShowDay=false;
+    if(isShow){
+      const sd=getShowDate(S.activeCage);
+      if(sd && sd===dateStr){isShowDay=true;}
+      if(sc.extra && name==='Fri'){
+        sc={...sc, extra: showWeek ? sc.extra.replace('Pre-show:','🚗 SHOW WEEK — travel prep:') : '🪧 Show-cage practice · (travel prep starts in real show week)'};
+      }
+    }
+    const cSF=getChk(S.activeCage,S.activePhase,dateStr,'sf');
+    const cSD=getChk(S.activeCage,S.activePhase,dateStr,'sd');
+    const cWT=getChk(S.activeCage,S.activePhase,dateStr,'wt');
+    const hasExtra=!!sc.extra;
+    const cEX=hasExtra?getChk(S.activeCage,S.activePhase,dateStr,'ex'):true;
+    const all=cSF&&cSD&&cWT&&cEX;
+    const isFuture=new Date(dateStr+'T00:00:00')>today()&&!isToday;
+    const note=getNotes(S.activeCage,dateStr);
+    h+=`<div class="day-row${isToday?' today':''}" style="${isShowDay?'border-color:var(--gold);box-shadow:0 0 20px rgba(192,160,32,.25);':isFuture?'opacity:0.6;':''}">
+    <div class="day-hdr"><span class="day-name">${name}</span>
+    ${isToday?'<span class="today-badge">TODAY</span>':''}
+    ${isShowDay?'<span class="today-badge" style="background:var(--gold)">🏆 SHOW</span>':''}
+    ${isFuture?'<span style="font-size:9px;font-family:\'DM Mono\',monospace;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:2px 5px">PREVIEW</span>':''}
+    <span class="date-badge">${fmtDisp(date)}</span>${all&&!isFuture?'<span class="done-badge">✓ DONE</span>':''}</div>
+    <div class="day-body">
+    ${tRow('sf','🥗 SOFTFOOD',sc.sf,cSF,dateStr,isFuture)}
+    ${tRow('sd','🌾 SEED MATRIX',sc.sd,cSD,dateStr,isFuture)}
+    ${tRow('wt','💧 WATER / ADDITIVE',sc.wt,cWT,dateStr,isFuture)}
+    ${hasExtra?tRow('ex','🏆 SHOW PREP TASKS',sc.extra,cEX,dateStr,isFuture):''}
+    ${isFuture?'':`<div class="notes-row"><div class="notes-lbl">📝 CAGE NOTES</div>
+    <textarea class="notes-inp" rows="2" placeholder="Observations, behavior, health notes..." onchange="saveNote('${dateStr}',this.value)">${note}</textarea>
+    </div>`}
+    </div></div>`;
+  });
+  return h;
+}
+
+function tRow(slot,label,text,checked,dateStr,isFuture){
+  return`<div class="task-row"><button class="chk${checked?' on':''}" data-slot="${slot}" data-date="${dateStr}" ${isFuture?'disabled style="opacity:0.4;cursor:default"':''} onclick="${isFuture?'':' togChk(this)'}">
+  <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5l3 3L10 1" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button><div><div class="tsk-lbl">${label}</div><div class="tsk-txt${checked?' done':''}">${text}</div></div></div>`;
+}
+
+// ── BIRDS TAB ─────────────────────────────────────────────────────────────────
+function rBirds(){
+  const birds=ls.getJ(`av|birds|c${S.activeCage}`,[]);
+  const p=getCagePhase(S.activeCage),wks=weeksInPhase(S.activeCage)||0;
+  const readyPct=p===2?Math.min(100,Math.round((wks/3)*100)):p===1?Math.min(70,Math.round((wks/4)*70)):p===3||p===4?0:40;
+  // Total birds across all cages
+  const totalAllCages=CAGES.reduce((acc,_,i)=>acc+ls.getJ(`av|birds|c${i}`,[]).length,0);
+  let h=`<div class="sec-title">BIRDS — ${CAGES[S.activeCage].toUpperCase()}</div>`;
+  // Quick access to full registry
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px">
+    <div>
+      <div style="font-size:13px;color:var(--text);font-weight:600">Total registered: ${totalAllCages} bird${totalAllCages!==1?'s':''}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">Across all ${CAGES.length} cages</div>
+    </div>
+    <button onclick="switchTab('birdreport')" style="background:color-mix(in srgb,var(--cur) 12%,transparent);border:1px solid var(--cur);border-radius:8px;color:var(--cur);font-size:11px;font-family:'DM Mono',monospace;font-weight:600;padding:7px 12px;cursor:pointer;white-space:nowrap">📋 Full Registry</button>
+  </div>`;
+  // Readiness card
+  h+=`<div class="card" style="margin-bottom:14px"><div class="card-title">BREEDING READINESS</div>`;
+  const birds_oldest=birds.length?birds.reduce((a,b)=>(ageMonths(a.dob)||0)>(ageMonths(b.dob)||0)?a:b):null;
+  const agePct=birds_oldest?Math.min(100,Math.round(((ageMonths(birds_oldest.dob)||0)/12)*100)):0;
+  [[`Phase (${PHASES[p].name})`,readyPct,'Phase progress'],['Oldest bird age',agePct,birds_oldest?(ageMonths(birds_oldest.dob)||'?')+' months':'No birds added']].forEach(([label,pct,note])=>{
+    const col=pct>=80?'var(--success)':pct>=50?'var(--warn)':'var(--danger)';
+    h+=`<div class="rbar-row"><div class="rbar-label" style="font-size:11px">${label}</div><div class="rbar"><div class="rbar-fill" style="width:${pct}%;background:${col}"></div></div><div class="rbar-pct">${pct}%</div></div><div style="font-size:10px;color:var(--muted);margin:-4px 0 10px 100px;font-family:'DM Mono',monospace">${note}</div>`;
+  });
+  h+=`</div>`;
+  // Bird list
+  if(!birds.length){
+    h+=`<div class="empty"><div class="ei">🐦</div>No birds added to ${CAGES[S.activeCage]} yet</div>`;
+  } else {
+    birds.forEach((b,i)=>{
+      const am=ageMonths(b.dob);const ready=breedingAge(b.dob);
+      const dotCol=ringColorHex(b.ringColor);
+      h+=`<div class="card" style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            ${b.ringColor?`<div style="width:12px;height:12px;border-radius:50%;background:${dotCol};border:2px solid var(--border);flex-shrink:0"></div>`:''}
+            <div><div style="font-size:14px;font-weight:600;color:var(--text)">${b.ring||'No ring'}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${b.sex||''} · ${b.color||'colour TBD'}</div></div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="editBird(${i})" style="background:none;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:11px;font-family:'DM Mono',monospace;padding:4px 8px;cursor:pointer">✎</button>
+            <button onclick="delBird(${i})" style="background:none;border:1px solid var(--border);border-radius:7px;color:var(--danger);font-size:11px;font-family:'DM Mono',monospace;padding:4px 8px;cursor:pointer">✕</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px">
+          <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:2px">DOB</div><div>${b.dob?fmtDisp(new Date(b.dob+'T00:00:00')):'—'}</div></div>
+          <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:2px">AGE</div><div style="color:${ready===false?'var(--warn)':'var(--text)'}">${am!==null?am+'mo':'—'}${ready===false?' ⚠ too young':ready?' ✓':''}</div></div>
+          <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:2px">LINEAGE</div><div style="font-size:10px">${b.sire?'♂ '+b.sire:''} ${b.dam?'♀ '+b.dam:''}</div></div>
+        </div>
+        ${b.notes?`<div style="margin-top:8px;font-size:11px;color:var(--muted);padding-top:6px;border-top:1px solid var(--border)">${b.notes}</div>`:''}
+      </div>`;
+    });
+  }
+  h+=`<button onclick="showAddBird(-1)" class="btn2 pri full" style="margin-top:4px">+ Add Bird to ${CAGES[S.activeCage]}</button>`;
+  // Pairing log
+  h+=`<div class="sec-title" style="margin-top:20px">PAIRING RECORD</div>`;
+  const pairings=ls.getJ(`av|pairings|c${S.activeCage}`,[]);
+  if(pairings.length){
+    h+=`<div class="card"><table class="tbl"><tr><th>Date</th><th>Cock</th><th>Hen</th><th>Result</th><th></th></tr>`;
+    pairings.forEach((pr,i)=>{
+      h+=`<tr><td>${pr.date||'—'}</td><td>${pr.cock||'—'}</td><td>${pr.hen||'—'}</td><td>${pr.result||'—'}</td>
+      <td><button onclick="delPairing(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px">✕</button></td></tr>`;
+    });
+    h+=`</table></div>`;
+  }
+  h+=`<button onclick="showAddPairing()" class="btn2 ghost full" style="margin-top:6px">+ Log Pairing</button>`;
+  return h;
+}
+
+// ── BIRD REPORT TAB ───────────────────────────────────────────────────────────
+// ── Bird family panel — renders inline inside a bird card in All Birds ──
+function birdFamilyPanel(ring){
+  const all=[];
+  CAGES.forEach((_,ci)=>{ls.getJ(`av|birds|c${ci}`,[]).forEach(b=>{if(b.ring)all.push({...b,cageIdx:ci,cage:CAGES[ci]});});});
+  const byRing={};all.forEach(b=>{byRing[b.ring]=b;});
+  const sel=byRing[ring];if(!sel)return'';
+  const children={};
+  all.forEach(b=>{[b.sire,b.dam].forEach(p=>{if(p&&byRing[p]){if(!children[p])children[p]=[];children[p].push(b);}});});
+  function sexIcon(s){return s==='Cock'?'♂':s==='Hen'?'♀':'?';}
+  function sexCol(s){return s==='Cock'?'#7eb8f7':s==='Hen'?'#f7a8c4':'#aaa';}
+  function chip(b,extra){
+    if(!b)return'';
+    return`<span onclick="S.treeRing='${b.ring}';renderAll()" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:color-mix(in srgb,${sexCol(b.sex)} 12%,var(--surface));border:1px solid color-mix(in srgb,${sexCol(b.sex)} 30%,transparent);border-radius:8px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:11px;color:${sexCol(b.sex)}">${sexIcon(b.sex)} ${b.ring}${b.color?` <span style="font-size:9px;color:var(--muted)">${b.color}</span>`:''}${extra||''}</span>`;
+  }
+  function ghostChip(label){return`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px dashed var(--border);border-radius:8px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${label} <span style="font-size:9px">(unregistered)</span></span>`;}
+
+  const sireB=sel.sire?byRing[sel.sire]:null;
+  const damB=sel.dam?byRing[sel.dam]:null;
+  const kids=children[sel.ring]||[];
+  const fullSibs=sel.sire&&sel.dam?all.filter(b=>b.ring!==sel.ring&&b.sire===sel.sire&&b.dam===sel.dam):[];
+  const halfSire=sel.sire?all.filter(b=>b.ring!==sel.ring&&b.sire===sel.sire&&!(sel.dam&&b.dam===sel.dam)):[];
+  const halfDam=sel.dam?all.filter(b=>b.ring!==sel.ring&&b.dam===sel.dam&&!(sel.sire&&b.sire===sel.sire)):[];
+
+  let h=`<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">`;
+  h+=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--cur);margin-bottom:10px;letter-spacing:.05em">🌳 FAMILY TREE — ${sel.ring}</div>`;
+
+  // Parents row
+  if(sel.sire||sel.dam){
+    h+=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:6px">PARENTS</div>`;
+    h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">`;
+    if(sel.sire)h+=sireB?chip(sireB):ghostChip('♂ '+sel.sire);
+    if(sel.dam)h+=damB?chip(damB):ghostChip('♀ '+sel.dam);
+    h+=`</div>`;
+  }
+
+  // Full siblings
+  if(fullSibs.length){
+    h+=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:6px">FULL SIBLINGS (${fullSibs.length}) — same ♂ × ♀ pair</div>`;
+    h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${fullSibs.map(b=>chip(b)).join('')}</div>`;
+  }
+
+  // Half siblings — sire side
+  if(halfSire.length){
+    h+=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:6px">HALF SIBLINGS ♂ (${halfSire.length}) — same father ♂ ${sel.sire}</div>`;
+    h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${halfSire.map(b=>chip(b,b.dam?` <span style="font-size:9px;color:var(--muted)">♀${b.dam}</span>`:'')).join('')}</div>`;
+  }
+
+  // Half siblings — dam side
+  if(halfDam.length){
+    h+=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:6px">HALF SIBLINGS ♀ (${halfDam.length}) — same mother ♀ ${sel.dam}</div>`;
+    h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${halfDam.map(b=>chip(b,b.sire?` <span style="font-size:9px;color:var(--muted)">♂${b.sire}</span>`:'')).join('')}</div>`;
+  }
+
+  // Offspring
+  if(kids.length){
+    h+=`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:6px">OFFSPRING (${kids.length})</div>`;
+    h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">${kids.map(b=>chip(b)).join('')}</div>`;
+  }
+
+  if(!sel.sire&&!sel.dam&&!kids.length&&!fullSibs.length&&!halfSire.length&&!halfDam.length){
+    h+=`<div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">No linked relatives registered yet</div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+function selectTreeBird(ring){S.treeRing=ring;renderAll();}
+
+function rBirdReport(){
+  // Collect all birds across all cages
+  const allBirds=[];
+  CAGES.forEach((cage,ci)=>{
+    ls.getJ(`av|birds|c${ci}`,[]).forEach((b,bi)=>{
+      allBirds.push({...b,cage,cageIdx:ci,birdIdx:bi});
+    });
+  });
+
+  let h=`<div class="sec-title">BIRD REGISTRY — ALL CAGES</div>`;
+
+  // Summary stats
+  const cocks=allBirds.filter(b=>b.sex==='Cock').length;
+  const hens=allBirds.filter(b=>b.sex==='Hen').length;
+  const readyBreed=allBirds.filter(b=>breedingAge(b.dob)===true).length;
+  const tooYoung=allBirds.filter(b=>breedingAge(b.dob)===false).length;
+
+  h+=`<div class="stat-grid">
+    <div class="stat-box"><div class="stat-val">${allBirds.length}</div><div class="stat-lbl">Total birds</div></div>
+    <div class="stat-box"><div class="stat-val">${cocks} ♂ / ${hens} ♀</div><div class="stat-lbl">Cocks / Hens</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--success)">${readyBreed}</div><div class="stat-lbl">Breeding age (≥10mo)</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--warn)">${tooYoung}</div><div class="stat-lbl">Under 10 months</div></div>
+  </div>`;
+
+  if(!allBirds.length){
+    return h+`<div class="empty"><div class="ei">🐦</div>No birds registered yet.<br>Add birds in the Birds tab.</div>`;
+  }
+
+  // Filter controls
+  h+=`<div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none">
+    <button onclick="S.birdFilter='all';renderAll()" class="pbtn${(!S.birdFilter||S.birdFilter==='all')?' active':''}">All (${allBirds.length})</button>
+    <button onclick="S.birdFilter='cock';renderAll()" class="pbtn${S.birdFilter==='cock'?' active':''}">♂ Cocks (${cocks})</button>
+    <button onclick="S.birdFilter='hen';renderAll()" class="pbtn${S.birdFilter==='hen'?' active':''}">♀ Hens (${hens})</button>
+    <button onclick="S.birdFilter='ready';renderAll()" class="pbtn${S.birdFilter==='ready'?' active':''}">✓ Ready (${readyBreed})</button>
+    <button onclick="S.birdFilter='young';renderAll()" class="pbtn${S.birdFilter==='young'?' active':''}">⚠ Young (${tooYoung})</button>
+  </div>`;
+
+  const filter=S.birdFilter||'all';
+  const filtered=allBirds.filter(b=>{
+    if(filter==='cock')return b.sex==='Cock';
+    if(filter==='hen')return b.sex==='Hen';
+    if(filter==='ready')return breedingAge(b.dob)===true;
+    if(filter==='young')return breedingAge(b.dob)===false;
+    return true;
+  });
+
+  if(!filtered.length){
+    h+=`<div class="empty"><div class="ei">🔍</div>No birds match this filter</div>`;
+  } else {
+    // Full bird cards
+    filtered.forEach(b=>{
+      const am=ageMonths(b.dob);
+      const ready=breedingAge(b.dob);
+      const dotCol=ringColorHex(b.ringColor);
+      const pairings=ls.getJ(`av|pairings|c${b.cageIdx}`,[]);
+      const birdPairings=pairings.filter(p=>p.cock===b.ring||p.hen===b.ring);
+      h+=`<div class="card" style="margin-bottom:10px;border-left:3px solid ${ready===true?'var(--success)':ready===false?'var(--warn)':'var(--border)'}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px">
+            ${b.ringColor?`<div style="width:14px;height:14px;border-radius:50%;background:${dotCol};border:2px solid var(--border);flex-shrink:0;margin-top:2px"></div>`:''}
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--text)">${b.ring||'No ring'}</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${b.sex||'?'} · ${b.color||'?'} · Ring: ${b.ring||'—'}</div>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:6px;background:${ready===true?'color-mix(in srgb,var(--success) 15%,transparent)':ready===false?'color-mix(in srgb,var(--warn) 15%,transparent)':'var(--surface2)'};color:${ready===true?'var(--success)':ready===false?'var(--warn)':'var(--muted)'};border:1px solid ${ready===true?'color-mix(in srgb,var(--success) 30%,transparent)':ready===false?'color-mix(in srgb,var(--warn) 30%,transparent)':'var(--border)'}">
+            ${ready===true?'✓ Ready':ready===false?'⚠ Young':'? Age unknown'}
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:3px">CAGE</div>
+            <div style="font-size:12px;color:var(--text)">${b.cage}</div>
+          </div>
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:3px">AGE</div>
+            <div style="font-size:12px;color:var(--text)">${am!==null?am+' months':'—'}</div>
+          </div>
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:3px">DOB</div>
+            <div style="font-size:12px;color:var(--text)">${b.dob?fmtDisp(new Date(b.dob+'T00:00:00')):'—'}</div>
+          </div>
+        </div>
+        ${(b.sire||b.dam)?`<div style="padding:8px 0;border-top:1px solid var(--border);margin-top:4px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">LINEAGE — tap a parent to view</div>
+          <div style="font-size:12px;color:var(--text);display:flex;gap:8px;flex-wrap:wrap">${b.sire?parentLink('♂',b.sire):''}${b.dam?parentLink('♀',b.dam):''}</div>
+        </div>`:''}
+        ${birdPairings.length?`<div style="padding:8px 0;border-top:1px solid var(--border);margin-top:4px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">PAIRING HISTORY (${birdPairings.length})</div>
+          ${birdPairings.slice(0,3).map(p=>`<div style="font-size:11px;color:var(--muted);margin-bottom:2px">${p.date} — ${p.cock} × ${p.hen} — ${p.result}</div>`).join('')}
+        </div>`:''}
+        ${b.notes?`<div style="padding:8px 0;border-top:1px solid var(--border);margin-top:4px;font-size:11px;color:var(--muted)">${b.notes}</div>`:''}
+        <div style="padding:8px 0;border-top:1px solid var(--border);margin-top:4px">
+          <button onclick="S.treeRing=S.treeRing==='${b.ring}'?null:'${b.ring}';renderAll()" style="background:${S.treeRing===b.ring?'color-mix(in srgb,var(--cur) 15%,transparent)':'var(--surface2)'};border:1px solid ${S.treeRing===b.ring?'var(--cur)':'var(--border)'};border-radius:8px;color:${S.treeRing===b.ring?'var(--cur)':'var(--muted)'};font-family:'DM Mono',monospace;font-size:11px;padding:7px 14px;cursor:pointer;width:100%;transition:all .2s">🌳 ${S.treeRing===b.ring?'Hide Family Tree':'View Family Tree'}</button>
+          ${S.treeRing===b.ring?birdFamilyPanel(b.ring):''}
+        </div>
+      </div>`;
+    });
+  }
+
+  // Export button
+  h+=`<button onclick="exportBirdReport()" class="btn2 pri full" style="margin-top:8px">⬇ Export Bird Registry (CSV)</button>`;
+  return h;
+}
+
+function exportBirdReport(){
+  const rows=[['Cage','Ring','Sex','DOB','Age (months)','Colour','Ring Colour','Sire','Dam','Breeding Ready','Notes']];
+  CAGES.forEach((cage,ci)=>{
+    ls.getJ(`av|birds|c${ci}`,[]).forEach(b=>{
+      const am=ageMonths(b.dob);
+      const ready=breedingAge(b.dob);
+      rows.push([
+        cage,
+        b.ring||'',b.sex||'',b.dob||'',
+        am!==null?am:'',b.color||'',b.ringColor||'',
+        b.sire||'',b.dam||'',
+        ready===true?'Yes':ready===false?'No':'Unknown',
+        (b.notes||'').replace(/,/g,' ')
+      ]);
+    });
+  });
+  const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='bird-registry-'+fmtDate(today())+'.csv';a.click();
+  URL.revokeObjectURL(url);toast('Bird registry exported');
+}
+
+function showAddBird(idx){
+  idx=(idx===undefined||idx===null)?-1:parseInt(idx);
+  const b=idx>=0?ls.getJ(`av|birds|c${S.activeCage}`,[])[idx]:{};
+  const isEdit=idx>=0;
+  // Cage selector — show on both add and edit, defaults to active cage
+  const cageOpts=CAGES.map((c,i)=>'<option value="'+i+'"'+(i===S.activeCage?' selected':'')+'>'+c+'</option>').join('');
+  document.getElementById('modalRoot').innerHTML=`<div class="modal-ov" onclick="if(event.target===this)closeModal()">
+  <div class="modal-bx" style="max-height:85vh;overflow-y:auto">
+  <div class="modal-ttl">${isEdit?'Edit Bird':'Add Bird'}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+    <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">RING NUMBER</div><input class="modal-inp" id="b_ring" value="${b.ring||''}" placeholder="KSA24-001" style="margin:0"></div>
+    <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">SEX</div><select class="modal-inp" id="b_sex" style="margin:0;cursor:pointer"><option${b.sex==='Cock'?' selected':''}>Cock</option><option${b.sex==='Hen'?' selected':''}>Hen</option><option${b.sex==='Unknown'?' selected':''}>Unknown</option></select></div>
+    <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">DATE OF BIRTH</div><input type="date" class="modal-inp" id="b_dob" value="${b.dob||''}" style="margin:0"></div>
+    <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">COLOUR / VARIETY</div><select class="modal-inp" id="b_color" style="margin:0;cursor:pointer"><option value=""${!b.color?' selected':''}>— select —</option>${birdColorOptions(b.color)}</select></div>
+    <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">RING COLOUR</div><select class="modal-inp" id="b_ringcol" style="margin:0;cursor:pointer"><option value="">None</option>${RING_COLORS.map(c=>'<option'+(b.ringColor===c?' selected':'')+'>'+c+'</option>').join('')}</select></div>
+    <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">SIRE (FATHER)</div><input class="modal-inp" id="b_sire" value="${b.sire||''}" placeholder="Ring or name" style="margin:0"></div>
+    <div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">DAM (MOTHER)</div><input class="modal-inp" id="b_dam" value="${b.dam||''}" placeholder="Ring or name" style="margin:0"></div>
+  </div>
+  <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">CAGE</div>
+  <select class="modal-inp" id="b_cage" style="margin-bottom:8px;cursor:pointer">${cageOpts}</select>
+  <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">NOTES</div>
+  <input class="modal-inp" id="b_notes" value="${b.notes||''}" placeholder="Condition, wins, observations">
+  <div class="modal-btns"><button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+  <button class="modal-btn ok" onclick="saveBird(${idx})">Save</button></div>
+  </div></div>`;
+}
+function editBird(i){showAddBird(i);}
+function saveBird(idx){
+  idx=parseInt(idx);
+  const g=id=>(document.getElementById(id)||{}).value||'';
+  const targetCage=parseInt((document.getElementById('b_cage')||{}).value??S.activeCage);
+  const ringVal=g('b_ring');
+  const bird={ring:ringVal,sex:g('b_sex'),dob:g('b_dob'),color:g('b_color'),ringColor:g('b_ringcol'),sire:g('b_sire'),dam:g('b_dam'),notes:g('b_notes')};
+  if(idx<0){
+    // Adding new bird — put directly in target cage
+    const birds=ls.getJ(`av|birds|c${targetCage}`,[]);
+    birds.push(bird);
+    ls.setJ(`av|birds|c${targetCage}`,birds);
+    toast('Bird added to '+CAGES[targetCage]);
+  } else {
+    // Editing existing bird
+    if(targetCage===S.activeCage){
+      // Same cage — just update in place
+      const birds=ls.getJ(`av|birds|c${S.activeCage}`,[]);
+      birds[idx]=bird;
+      ls.setJ(`av|birds|c${S.activeCage}`,birds);
+      toast('Bird updated');
+    } else {
+      // Moving to different cage — remove from old, add to new
+      const oldBirds=ls.getJ(`av|birds|c${S.activeCage}`,[]);
+      oldBirds.splice(idx,1);
+      ls.setJ(`av|birds|c${S.activeCage}`,oldBirds);
+      const newBirds=ls.getJ(`av|birds|c${targetCage}`,[]);
+      newBirds.push(bird);
+      ls.setJ(`av|birds|c${targetCage}`,newBirds);
+      toast('Moved to '+CAGES[targetCage]);
+    }
+  }
+  closeModal();renderAll();
+}
+function delBird(i){
+  tapConfirm('delBird'+i,'Tap ✕ again to remove bird',()=>{
+    const birds=ls.getJ(`av|birds|c${S.activeCage}`,[]);birds.splice(i,1);
+    ls.setJ(`av|birds|c${S.activeCage}`,birds);toast('Bird removed','warn');renderAll();
+  });
+}
+function showAddPairing(){
+  // Collect all birds from ALL cages, grouped by sex
+  const allBirds=[];
+  CAGES.forEach((cage,ci)=>{
+    ls.getJ(`av|birds|c${ci}`,[]).forEach((b,bi)=>{
+      if(b.ring) allBirds.push({label:b.ring+(cage!==CAGES[S.activeCage]?' — '+cage:''), value:b.ring, sex:b.sex, cage});
+    });
+  });
+  const cocks=allBirds.filter(b=>b.sex==='Cock'||b.sex==='Unknown'||!b.sex);
+  const hens=allBirds.filter(b=>b.sex==='Hen'||b.sex==='Unknown'||!b.sex);
+  // Build options — if no registered birds, fall back to free text
+  const cockOpts=cocks.length
+    ?'<option value="">— select cock —</option>'+cocks.map(b=>'<option value="'+b.value+'">'+b.label+'</option>').join('')
+    :'<option value="">No cocks registered</option>';
+  const henOpts=hens.length
+    ?'<option value="">— select hen —</option>'+hens.map(b=>'<option value="'+b.value+'">'+b.label+'</option>').join('')
+    :'<option value="">No hens registered</option>';
+  const hasBirds=allBirds.length>0;
+  document.getElementById('modalRoot').innerHTML=`<div class="modal-ov" onclick="if(event.target===this)closeModal()">
+  <div class="modal-bx"><div class="modal-ttl">Log Pairing</div>
+  ${!hasBirds?`<div style="font-size:12px;color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:8px;padding:9px 12px;margin-bottom:12px">No birds registered yet. Add birds in the 🐦 Birds tab first to select from a list.</div>`:''}
+  <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">DATE PAIRED</div>
+  <input type="date" class="modal-inp" id="pr_date" value="${fmtDate(today())}">
+  <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">COCK ♂</div>
+  ${hasBirds
+    ?`<select class="modal-inp" id="pr_cock" style="cursor:pointer">${cockOpts}</select>`
+    :`<input class="modal-inp" id="pr_cock" placeholder="Cock ring or name">`}
+  <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">HEN ♀</div>
+  ${hasBirds
+    ?`<select class="modal-inp" id="pr_hen" style="cursor:pointer">${henOpts}</select>`
+    :`<input class="modal-inp" id="pr_hen" placeholder="Hen ring or name">`}
+  <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">RESULT</div>
+  <select class="modal-inp" id="pr_res" style="cursor:pointer"><option>In progress</option><option>Fertile eggs</option><option>Infertile</option><option>Chicks hatched</option><option>Failed</option></select>
+  <div class="modal-btns"><button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+  <button class="modal-btn ok" onclick="savePairing()">Save</button></div></div></div>`;
+}
+function savePairing(){
+  const g=id=>(document.getElementById(id)||{}).value||'';
+  const p=ls.getJ(`av|pairings|c${S.activeCage}`,[]);
+  p.push({date:g('pr_date'),cock:g('pr_cock'),hen:g('pr_hen'),result:g('pr_res')});
+  ls.setJ(`av|pairings|c${S.activeCage}`,p);closeModal();toast('Pairing logged');renderAll();
+}
+function delPairing(i){
+  tapConfirm('delPair'+i,'Tap ✕ again to delete pairing',()=>{const p=ls.getJ(`av|pairings|c${S.activeCage}`,[]);p.splice(i,1);ls.setJ(`av|pairings|c${S.activeCage}`,p);toast('Pairing deleted','warn');renderAll();});
+}
+
+// ── HEALTH TAB ────────────────────────────────────────────────────────────────
+function rHealth(){
+  const p=getCagePhase(S.activeCage);
+  const records=ls.getJ(`av|health|c${S.activeCage}`,[]);
+  const weights=ls.getJ(`av|chick_wt|c${S.activeCage}`,[]);
+  const rearStart=p===4?getPhaseStart(S.activeCage):'';
+  const daysIn=rearStart?Math.round((today()-new Date(rearStart+'T00:00:00'))/(864e5)):0;
+  let h=`<div class="sec-title">HEALTH LOG — ${CAGES[S.activeCage].toUpperCase()}</div>`;
+  // Log form
+  h+=`<div class="card" style="margin-bottom:14px"><div class="card-title">ADD ENTRY</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <div style="flex:1"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">TYPE</div>
+    <select class="finp" id="ht_type" style="font-size:12px">${HEALTH_TYPES.map(t=>'<option>'+t+'</option>').join('')}</select></div>
+    <div style="flex:1"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">DATE</div>
+    <input type="date" class="finp" id="ht_date" value="${fmtDate(today())}" style="font-size:12px"></div>
+  </div>
+  <div style="margin-bottom:8px"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">NOTES</div>
+  <input class="finp" id="ht_notes" placeholder="Description, medication, dosage..."></div>
+  <button onclick="addHealth()" class="btn2 pri btn2">+ Log Entry</button></div>`;
+  if(records.length){
+    h+=`<div class="card"><div class="card-title">HISTORY (${records.length} entries)</div>`;
+    records.slice().reverse().slice(0,20).forEach((r,ri)=>{
+      const bCls=r.type.includes('✓')?'hb-ok':r.type.includes('💊')||r.type.includes('🩺')?'hb-med':'hb-warn';
+      h+=`<div class="hlog-row"><div class="hlog-date">${r.date||''}</div>
+      <div class="hbadge ${bCls}">${r.type.split(' ')[0]}</div>
+      <div style="flex:1;font-size:12px;color:var(--text)">${r.notes||''}</div>
+      <button onclick="delHealth(${records.length-1-ri})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px">✕</button></div>`;
+    });
+    h+=`</div>`;
+  } else {
+    h+=`<div class="empty"><div class="ei">💊</div>No health records yet</div>`;
+  }
+  // Chick weights — only in Phase 4
+  if(p===4){
+    h+=`<div class="sec-title" style="margin-top:20px">CHICK WEIGHTS & MILESTONES</div>
+    <div class="card" style="margin-bottom:10px"><div class="card-title">WEIGHT LOG — Day ${daysIn+1} of rearing</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="flex:1"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">CHICK ID</div>
+      <input class="finp" id="wt_id" placeholder="e.g. Chick 1" style="font-size:12px"></div>
+      <div style="flex:1"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">WEIGHT (g)</div>
+      <input type="number" class="finp" id="wt_g" placeholder="12.5" step="0.1" style="font-size:12px"></div>
+      <div style="align-self:flex-end"><button onclick="addChickWeight()" class="btn2 pri" style="padding:8px 12px">LOG</button></div>
+    </div>`;
+    if(weights.length){
+      weights.slice().reverse().slice(0,10).forEach(w=>{
+        h+=`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span style="font-family:'DM Mono',monospace;color:var(--muted)">${w.date}</span>
+        <span style="color:var(--text)">${w.id}</span>
+        <span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--cur)">${w.g}g</span></div>`;
+      });
+    }
+    h+=`</div>`;
+    // Milestones
+    h+=`<div class="card"><div class="card-title">DEVELOPMENT MILESTONES</div>`;
+    CHICK_MILESTONES.forEach((ms,i)=>{
+      const done=ls.get(`av|ms|c${S.activeCage}|${i}`)==='1';
+      const isPast=daysIn>ms.day;const isCurrent=Math.abs(daysIn-ms.day)<=1;
+      h+=`<div class="mstone-row">
+        <div class="mstone-day" style="${isCurrent?'color:var(--warn)':isPast?'color:var(--muted)':''}">${isCurrent?'≈NOW':'Day '+ms.day}</div>
+        <div class="mstone-txt" style="color:${isPast&&done?'var(--muted)':'var(--text)'}">${ms.text}</div>
+        <button onclick="togMilestone(${i})" style="width:18px;height:18px;border-radius:4px;border:2px solid ${done?'var(--success)':'var(--border)'};background:${done?'var(--success)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          ${done?'<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3L9 1" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
+        </button>
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+  return h;
+}
+function addHealth(){
+  const type=(document.getElementById('ht_type')||{}).value||HEALTH_TYPES[0];
+  const date=(document.getElementById('ht_date')||{}).value||fmtDate(today());
+  const notes=(document.getElementById('ht_notes')||{}).value||'';
+  if(!notes.trim()){toast('Add a note first','warn');return;}
+  const rec=ls.getJ(`av|health|c${S.activeCage}`,[]);rec.push({type,date,notes});
+  ls.setJ(`av|health|c${S.activeCage}`,rec);toast('Entry logged');renderAll();
+}
+function delHealth(i){
+  const rec=ls.getJ(`av|health|c${S.activeCage}`,[]);rec.splice(i,1);ls.setJ(`av|health|c${S.activeCage}`,rec);renderAll();
+}
+function addChickWeight(){
+  const id=(document.getElementById('wt_id')||{}).value||'Chick';
+  const g=parseFloat((document.getElementById('wt_g')||{}).value||'0');
+  if(!g){toast('Enter weight','warn');return;}
+  const wts=ls.getJ(`av|chick_wt|c${S.activeCage}`,[]);wts.push({date:fmtDisp(today()),id,g});
+  ls.setJ(`av|chick_wt|c${S.activeCage}`,wts);toast('Weight logged');renderAll();
+}
+function togMilestone(i){
+  const done=ls.get(`av|ms|c${S.activeCage}|${i}`)==='1';
+  ls.set(`av|ms|c${S.activeCage}|${i}`,done?'0':'1');renderAll();
+}
+
+// ── ANALYTICS TAB ─────────────────────────────────────────────────────────────
+function rAnalytics(){
+  let h=`<div class="sec-title">BREEDING PERFORMANCE REPORTS</div>`;
+  // Whole-flock stats
+  let totalEggs=0,totalFertile=0,totalHatched=0;
+  CAGES.forEach((_,i)=>{
+    ls.getJ(`av|clutch|c${i}`,[]).forEach(cl=>{
+      cl.eggs.forEach(e=>{totalEggs++;if(e.status==='fertile'||e.status==='hatched')totalFertile++;if(e.status==='hatched')totalHatched++;});
+    });
+  });
+  h+=`<div class="stat-grid">
+    <div class="stat-box"><div class="stat-val">${CAGES.length}</div><div class="stat-lbl">Active cages</div></div>
+    <div class="stat-box"><div class="stat-val">${CAGES.reduce((acc,_,i)=>acc+ls.getJ(`av|birds|c${i}`,[]).length,0)}</div><div class="stat-lbl">Birds registered</div></div>
+    <div class="stat-box"><div class="stat-val">${totalEggs}</div><div class="stat-lbl">Total eggs laid</div></div>
+    <div class="stat-box"><div class="stat-val">${totalHatched}</div><div class="stat-lbl">Chicks hatched</div></div>
+  </div>`;
+  if(totalEggs>0){
+    const fRate=Math.round((totalFertile/totalEggs)*100);
+    const hRate=totalFertile>0?Math.round((totalHatched/totalFertile)*100):0;
+    h+=`<div class="card" style="margin-bottom:12px"><div class="card-title">FERTILITY & HATCH RATES</div>
+    <div class="rbar-row"><div class="rbar-label">Fertility</div><div class="rbar"><div class="rbar-fill" style="width:${fRate}%;background:${fRate>=70?'var(--success)':'var(--warn)'}"></div></div><div class="rbar-pct">${fRate}%</div></div>
+    <div class="rbar-row"><div class="rbar-label">Hatch rate</div><div class="rbar"><div class="rbar-fill" style="width:${hRate}%;background:${hRate>=70?'var(--success)':'var(--warn)'}"></div></div><div class="rbar-pct">${hRate}%</div></div></div>`;
+  }
+  // Per-cage table
+  h+=`<div class="card" style="margin-bottom:12px"><div class="card-title">CAGE BREAKDOWN</div>
+  <table class="tbl"><tr><th>Cage</th><th>Phase</th><th>Birds</th><th>Eggs</th><th>Hatched</th></tr>`;
+  CAGES.forEach((_,i)=>{
+    const p=getCagePhase(i);let e=0,hat=0;
+    ls.getJ(`av|clutch|c${i}`,[]).forEach(cl=>{cl.eggs.forEach(eg=>{e++;if(eg.status==='hatched')hat++;});});
+    h+=`<tr><td>${CAGES[i]}</td><td>${PHASES[p].icon} ${PHASES[p].name}</td><td>${ls.getJ(`av|birds|c${i}`,[]).length}</td><td>${e}</td><td>${hat}</td></tr>`;
+  });
+  h+=`</table></div>`;
+  // This week tasks
+  const weekDates=getWeekDates(0);let done=0,total=0;
+  weekDates.forEach(({dateStr})=>['sf','sd','wt'].forEach(sl=>{total++;if(getChk(S.activeCage,S.activePhase,dateStr,sl))done++;}));
+  const cRate=total>0?Math.round((done/total)*100):0;
+  h+=`<div class="card" style="margin-bottom:12px"><div class="card-title">THIS WEEK — ${CAGES[S.activeCage].toUpperCase()}</div>
+  <div class="rbar-row"><div class="rbar-label">Tasks done</div><div class="rbar"><div class="rbar-fill" style="width:${cRate}%;background:var(--cur)"></div></div><div class="rbar-pct">${cRate}%</div></div>
+  <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace">${done} of ${total} tasks completed this week</div></div>`;
+  // Temp summary
+  const temps=[];for(let i=0;i<ls.length;i++){const k=ls.key(i);if(k&&k.startsWith('av|temp|')){const v=parseFloat(ls.get(k));if(!isNaN(v))temps.push(v);}}
+  if(temps.length){
+    const avg=Math.round(temps.reduce((a,b)=>a+b,0)/temps.length*10)/10,mx=Math.max(...temps);
+    h+=`<div class="card"><div class="card-title">TEMPERATURE SUMMARY</div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text)">Average</span><span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--cur)">${avg}°C</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text)">Hottest day</span><span style="font-family:'DM Mono',monospace;font-weight:600;color:${mx>=40?'var(--danger)':mx>=35?'var(--warn)':'var(--cur)'}">${mx}°C</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0"><span style="font-size:13px;color:var(--text)">Days logged</span><span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--cur)">${temps.length}</span></div></div>`;
+  }
+  // Export/import
+  h+=`<div class="sec-title" style="margin-top:20px">DATA MANAGEMENT</div>
+  <div class="card"><div class="card-title">BACKUP & RESTORE</div>
+  ${(()=>{
+    const last=ls.get('av|last_auto_backup');
+    const nextDue=last?Math.max(0,7-Math.round((today()-new Date(last+'T00:00:00'))/(864e5))):0;
+    return last
+      ?`<div style="display:flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--cur) 8%,transparent);border:1px solid color-mix(in srgb,var(--cur) 20%,transparent);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--cur)">📦 Last auto backup: <b>${last}</b>${nextDue>0?' · Next in '+nextDue+' day'+(nextDue===1?'':'s'):' · <span style="color:var(--warn)">Due today</span>'}</div>`
+      :`<div style="background:color-mix(in srgb,var(--warn) 8%,transparent);border:1px solid color-mix(in srgb,var(--warn) 20%,transparent);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--warn)">⚠ No auto backup recorded yet — backup runs automatically on app open every 7 days</div>`;
+  })()}
+  <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Auto backup runs every 7 days when you open the app and downloads a JSON file. You can also backup manually anytime.</div>
+  <button onclick="manualBackup()" class="btn2 pri full" style="margin-bottom:8px">📦 Backup Now</button>
+  <button onclick="exportCSV()" class="btn2 ghost full" style="margin-bottom:8px">⬇ Export Tracker Log (CSV)</button>
+  <label class="btn2 ghost full" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><input type="file" accept=".json" onchange="importAllData(this)" style="display:none">⬆ Import Data (JSON)</label>
+  </div>`;
+  return h;
+}
+function manualBackup(){
+  exportAllData();
+  ls.set('av|last_auto_backup',fmtDate(today()));
+  renderAll(); // refresh to update the "last backup" display
+}
+function exportAllData(){
+  const data={};
+  // Export from ls wrapper (covers both localStorage and in-memory fallback)
+  try{
+    // Try real localStorage first
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('av|'))data[k]=localStorage.getItem(k);
+    }
+  }catch(e){}
+  // Also sweep the ls in-memory store (catches data when localStorage is blocked)
+  try{
+    for(let i=0;i<ls.length;i++){
+      const k=ls.key(i);
+      if(k&&k.startsWith('av|')&&!data[k])data[k]=ls.get(k);
+    }
+  }catch(e){}
+  if(!Object.keys(data).length){
+    toast('No data found to export — have you added any birds or records?','warn');
+    return;
+  }
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='aviary-backup-'+fmtDate(today())+'.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('✓ Backup exported — '+Object.keys(data).length+' records saved');
+}
+function importAllData(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      const count=Object.keys(data).length;
+      if(!count){toast('Backup file is empty','warn');return;}
+      // Use tap-twice since modalConfirm is unreliable on device
+      tapConfirm('importData','Found '+count+' records — tap Import again to confirm overwrite',()=>{
+        Object.entries(data).forEach(([k,v])=>ls.set(k,v));
+        CAGES=(()=>{try{const v=JSON.parse(ls.get('av|cagelist'));if(Array.isArray(v)&&v.length)return v;}catch{}return['Cage 1','Cage 2','Cage 3','Cage 4'];})();
+        S.activeCage=0;
+        S.activePhase=getCagePhase(0);
+        toast('✓ Data imported — '+count+' records loaded');
+        renderAll();
+      });
+    }catch(e){toast('Invalid backup file: '+e.message,'warn');}
+  };
+  r.readAsText(file);
+}
+
+function rHistory(){
+  const entries=[];
+  for(let i=0;i<ls.length;i++){
+    const k=ls.key(i);
+    if(!k.startsWith(`av|c${S.activeCage}|p`))continue;
+    const p=k.split('|');if(p.length<5)continue;
+    const phase=parseInt(p[2].replace('p',''));
+    const dateStr=p[3];
+    if(!dateStr.match(/\d{4}-\d{2}-\d{2}/))continue;
+    if(ls.get(k)!=='1')continue;
+    let e=entries.find(x=>x.dateStr===dateStr&&x.phase===phase);
+    if(!e){e={dateStr,phase,slots:[]};entries.push(e);}
+    e.slots.push(p[4]);
+  }
+  if(!entries.length)return`<div class="empty"><div class="ei">📭</div>No history yet for ${CAGES[S.activeCage]}.</div>`;
+  entries.sort((a,b)=>b.dateStr.localeCompare(a.dateStr));
+  const weeks={};
+  entries.forEach(e=>{
+    const d=new Date(e.dateStr+'T00:00:00'),dfs=(d.getDay()+1)%7,ws=new Date(d);
+    ws.setDate(d.getDate()-dfs);const wk=fmtDate(ws);
+    if(!weeks[wk])weeks[wk]=[];weeks[wk].push(e);
+  });
+  let h=`<div class="sec-title">HISTORY — ${CAGES[S.activeCage].toUpperCase()}</div>`;
+  Object.keys(weeks).sort().reverse().forEach(wk=>{
+    const wd=new Date(wk+'T00:00:00'),we=new Date(wd);we.setDate(wd.getDate()+6);
+    h+=`<div class="hist-week"><div class="hist-wk-lbl">${fmtDisp(wd)} – ${fmtDisp(we)}</div>`;
+    weeks[wk].sort((a,b)=>b.dateStr.localeCompare(a.dateStr)).forEach(e=>{
+      const d=new Date(e.dateStr+'T00:00:00'),dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+      const note=getNotes(S.activeCage,e.dateStr);
+      h+=`<div class="hist-row"><span class="hist-date">${dn} ${fmtDisp(d)}</span>
+      <div class="hist-dots"><div class="dot${e.slots.includes('sf')?' on':''}"></div>
+      <div class="dot${e.slots.includes('sd')?' on':''}"></div>
+      <div class="dot${e.slots.includes('wt')?' on':''}"></div></div>
+      ${note?`<span class="hist-note">💬 ${note}</span>`:''}
+      <span class="hist-ptag" style="color:${PHASES[e.phase].accent}">P${e.phase}</span></div>`;
+    });
+    h+=`</div>`;
+  });
+  h+=`<button class="export-btn" onclick="exportCSV()">⬇ Export History as CSV</button>`;
+  return h;
+}
+
+function rClutch(){
+  const clutches=ls.getJ(`av|clutch|c${S.activeCage}`,[]);
+  let h=`<div class="sec-title">CLUTCH TRACKER — ${CAGES[S.activeCage].toUpperCase()}</div>`;
+  if(!clutches.length)h+=`<div class="empty"><div class="ei">🥚</div>No clutch recorded yet.</div>`;
+  clutches.forEach((cl,ci)=>{
+    h+=`<div class="clutch-card"><div class="clutch-hdr"><span class="clutch-title">Clutch #${ci+1} — ${cl.started}</span>
+    <button onclick="delClutch(${ci})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">✕</button></div>
+    <div class="clutch-body">
+    <div class="egg-grid-hdr"><span>#</span><span>LAY DATE</span><span>STATUS</span><span>EXP HATCH</span><span></span></div>`;
+    cl.eggs.forEach((egg,ei)=>{
+      // Expected hatch shows as soon as a lay date is entered (lay + 18 days),
+      // greyed for pending, coloured once fertile/hatched, struck-through if clear/dead.
+      const hd=egg.layDate?hatchDate(egg.layDate):'';
+      let hatchDisp='';
+      if(hd){
+        const hdShort=fmtDisp(new Date(hd+'T00:00:00'));
+        if(egg.status==='clear'||egg.status==='dead'){
+          hatchDisp=`<span style="text-decoration:line-through;opacity:0.5">${hdShort}</span>`;
+        } else if(egg.status==='hatched'){
+          hatchDisp='🐣 '+hdShort;
+        } else {
+          hatchDisp=hdShort;
+        }
+      }
+      h+=`<div class="egg-row"><span class="egg-num">E${ei+1}</span>
+      <input type="date" class="egg-inp" value="${egg.layDate||''}" onchange="updEgg(${ci},${ei},'layDate',this.value)">
+      <select class="egg-sel" onchange="updEgg(${ci},${ei},'status',this.value)">
+        <option value="unknown"${egg.status==='unknown'?' selected':''}>Pending</option>
+        <option value="fertile"${egg.status==='fertile'?' selected':''}>✓ Fertile</option>
+        <option value="clear"${egg.status==='clear'?' selected':''}>✗ Clear</option>
+        <option value="dis"${egg.status==='dis'?' selected':''}>DIS</option>
+        <option value="hatched"${egg.status==='hatched'?' selected':''}>🐣 Hatched</option>
+        <option value="dead"${egg.status==='dead'?' selected':''}>✗ Dead</option>
+      </select>
+      <span class="egg-hatch ${egg.status}">${hatchDisp}</span>
+      <button onclick="delEgg(${ci},${ei})" style="background:color-mix(in srgb,var(--danger) 15%,transparent);border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);border-radius:7px;color:var(--danger);cursor:pointer;font-size:15px;font-weight:700;width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0">✕</button></div>`;
+      // Ringing status sub-row for hatched chicks
+      if(egg.status==='hatched'&&egg.hatchedOn){
+        const age=Math.round((today()-new Date(egg.hatchedOn+'T00:00:00'))/(864e5));
+        if(egg.ringed){
+          h+=`<div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:5px 0 5px 28px;font-family:'DM Mono',monospace;font-size:10px;color:var(--success)">💍 Ringed${egg.ringedOn?' on '+egg.ringedOn:''} <button onclick="unringChick(${ci},${ei})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:10px;text-decoration:underline;margin-left:4px">undo</button></div>`;
+        } else {
+          const col=age>=9?'var(--danger)':age>=6?'var(--warn)':age>=5?'var(--cur)':'var(--muted)';
+          const msg=age<5?`Ring at day 6–8 (chick is day ${age})`:age<=8?`💍 RING NOW — day ${age} (ideal 6–8)`:age<=10?`💍 Ring TODAY — day ${age}, window closing`:`⚠ Day ${age} — may be too late to ring`;
+          h+=`<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0 5px 28px;font-family:'DM Mono',monospace;font-size:10px;color:${col}"><span>${msg}</span>
+          <button onclick="ringChick(${ci},${ei})" style="background:color-mix(in srgb,var(--cur) 15%,transparent);border:1px solid var(--cur);border-radius:6px;color:var(--cur);cursor:pointer;font-size:10px;font-family:'DM Mono',monospace;padding:4px 10px;white-space:nowrap">Mark ringed</button></div>`;
+        }
+      }
+    });
+    // Next-hatch countdown summary for this clutch
+    let soonest=null;
+    cl.eggs.forEach(egg=>{
+      if(egg.layDate&&egg.status!=='clear'&&egg.status!=='dead'&&egg.status!=='hatched'){
+        const hd=new Date(hatchDate(egg.layDate)+'T00:00:00');
+        if(!soonest||hd<soonest)soonest=hd;
+      }
+    });
+    if(soonest){
+      const days=Math.round((soonest-today())/(864e5));
+      const col=days<0?'var(--muted)':days<=2?'var(--warn)':'var(--cur)';
+      const txt=days<0?'Hatch window passed — candle/check nest':days===0?'🐣 Expected hatch TODAY':days===1?'🐣 Hatch expected tomorrow':`🐣 Next hatch in ${days} days (${fmtDisp(soonest)})`;
+      h+=`<div style="margin-top:10px;padding:9px 12px;background:color-mix(in srgb,${col} 10%,transparent);border:1px solid color-mix(in srgb,${col} 25%,transparent);border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;color:${col}">${txt}</div>`;
+    }
+    h+=`<button class="add-egg-btn" onclick="addEgg(${ci})">+ Add Egg</button></div></div>`;
+  });
+  // Shavings refresh tracker — only show during chick rearing (phase 4)
+  if(getCagePhase(S.activeCage)===4){
+    const lastRefresh=ls.get(`av|shavings|c${S.activeCage}`);
+    const daysSince=lastRefresh?Math.round((today()-new Date(lastRefresh+'T00:00:00'))/(864e5)):null;
+    const statusCol=daysSince===null||daysSince>=5?'var(--warn)':'var(--success)';
+    const statusTxt=daysSince===null?'Never recorded — tap to mark done':daysSince===0?'Refreshed today ✓':daysSince===1?'Refreshed yesterday ✓':`Last refreshed ${daysSince} days ago${daysSince>=5?' — DUE NOW':''}`;
+    h+=`<div style="background:color-mix(in srgb,${statusCol} 8%,var(--surface));border:1px solid color-mix(in srgb,${statusCol} 25%,transparent);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">🪵 WOOD SHAVINGS IN NEST</div>
+      <div style="font-size:12px;color:${statusCol};font-family:'DM Mono',monospace;margin-bottom:8px">${statusTxt}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Refresh every 5 days to maintain grip and prevent splayed legs. Pine shavings only — no cedar.</div>
+      <button onclick="markShavingsRefreshed()" style="background:var(--cur);border:none;border-radius:8px;color:#000;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:8px 16px;cursor:pointer">🪵 Shavings Refreshed Today</button>
+    </div>`;
+  }
+  h+=`<button class="export-btn" onclick="newClutch()" style="margin-top:12px">🥚 New Clutch</button>`;
+  return h;
+}
+
+function rWeights(){
+  const clutches=ls.getJ(`av|clutch|c${S.activeCage}`,[]);
+  const chicks=[];
+  clutches.forEach((cl,ci)=>cl.eggs.forEach((eg,ei)=>{
+    if(eg.status==='hatched')chicks.push({label:`Clutch ${ci+1} Egg ${ei+1}`,key:`c${S.activeCage}_cl${ci}_e${ei}`});
+  }));
+  let h=`<div class="sec-title">CHICK WEIGHTS — ${CAGES[S.activeCage].toUpperCase()}</div>`;
+  if(!chicks.length)return h+`<div class="empty"><div class="ei">⚖️</div>Mark eggs as 'Hatched' in Clutch tab<br>to enable weight tracking here.</div>`;
+  chicks.forEach(chick=>{
+    const log=ls.getJ(`av|weight|${chick.key}`,[]);
+    const latest=log.length?log[log.length-1]:null;
+    const prev=log.length>1?log[log.length-2]:null;
+    const delta=latest&&prev?latest.g-prev.g:null;
+    h+=`<div class="weight-card">
+    <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--cur);margin-bottom:10px">${chick.label}</div>
+    <div class="weight-row"><div class="w-inp-wrap"><div class="w-inp-lbl">WEIGHT (grams)</div>
+    <input type="number" class="w-inp" id="wi_${chick.key}" placeholder="e.g. 12.5" step="0.1"></div>
+    <button class="w-btn" onclick="saveWeight('${chick.key}')">LOG</button></div>
+    ${latest?`<div style="font-family:'DM Mono',monospace;font-size:12px;margin-bottom:8px">Latest: <span style="color:var(--cur);font-size:15px">${latest.g}g</span>
+    ${delta!==null?`<span class="${delta>=0?'wl-up':'wl-dn'}" style="margin-left:8px">${delta>=0?'+':''}${delta.toFixed(1)}g</span>`:''}</div>`:''}
+    ${log.length?`<div>${log.slice().reverse().slice(0,7).map((en,i)=>{
+      const pv=log.slice().reverse()[i+1];const d2=pv?en.g-pv.g:null;
+      return`<div class="wlog-row"><span class="wl-date">${en.date}</span>
+      <span class="wl-val" style="color:var(--cur)">${en.g}g</span>
+      ${d2!==null?`<span class="${d2>=0?'wl-up':'wl-dn'}">${d2>=0?'+':''}${d2.toFixed(1)}g</span>`:'<span></span>'}
+      </div>`;}).join('')}</div>`:''}
+    </div>`;
+  });
+  return h;
+}
+
+function rTemp(){
+  const todayStr=fmtDate(today()),todayVal=ls.get(`av|temp|${todayStr}`)||'';
+  const allT=[];
+  for(let i=0;i<ls.length;i++){
+    const k=ls.key(i);
+    if(!k.startsWith('av|temp|'))continue;
+    const d=k.replace('av|temp|','');
+    if(d.match(/\d{4}-\d{2}-\d{2}/))allT.push({date:d,val:parseFloat(ls.get(k))});
+  }
+  allT.sort((a,b)=>b.date.localeCompare(a.date));
+  return`<div class="sec-title">ROOM TEMPERATURE — DAMMAM ROOFTOP</div>
+  <div class="temp-card">
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:10px">TODAY — ${fmtDisp(today())}</div>
+    <div class="temp-today"><div class="temp-inp-wrap"><div class="temp-inp-lbl">ROOM TEMP (°C)</div>
+    <input type="number" class="temp-inp" id="tInp" value="${todayVal}" placeholder="e.g. 36" step="0.5"></div>
+    <button class="temp-save-btn" onclick="saveTemp()">LOG</button></div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">🟢 Safe &lt;35°C &nbsp; 🟡 Watch 35–39°C &nbsp; 🔴 Danger ≥40°C</div>
+  </div>
+  ${allT.length?`<div class="temp-card"><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:8px">TEMPERATURE LOG</div>
+  ${allT.slice(0,30).map(t=>{
+    const cls=t.val>=40?'t-hot':t.val>=35?'t-warn':'t-ok';
+    const ic=t.val>=40?'🔴':t.val>=35?'🟡':'🟢';
+    const d=new Date(t.date+'T00:00:00'),dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+    return`<div class="temp-hist-row"><span class="temp-date">${dn} ${fmtDisp(d)}</span><span class="temp-val ${cls}">${ic} ${t.val}°C</span></div>`;
+  }).join('')}</div>`:''}`;
+}
+
+function rChop(){
+  // Vegetables are the chop component INSIDE Platform C soft food.
+  // Chop is served exactly on Platform C soft-food days — not separately.
+  const weeks=getWeekDates(S.weekOffset);
+  const wS=weeks[0].date,wE=weeks[6].date,isCur=S.weekOffset===0;
+  const cagePhase=getCagePhase(S.activeCage);
+  const chopDays=chopDaysForPhase(cagePhase);
+
+  // ---- Monthly calculator across all cages (based on each cage's current phase) ----
+  let totalGMonth=0;
+  const perCage=CAGES.map((name,i)=>{
+    const p=getCagePhase(i);
+    const days=chopDaysForPhase(p).length;
+    const gWeek=TBSP_PER_PAIR*days*G_PER_TBSP;
+    const gMonth=gWeek*WEEKS_PER_MONTH;
+    totalGMonth+=gMonth;
+    return{name,p,days,gWeek,gMonth};
+  });
+
+  let h='';
+
+  // ── Platform C Soft Food Calculator ──────────────────────────────
+  // Given grams of veg chop, calculates eggfood and dry rusk to add.
+  // Ratios based on exhibition breeder consensus:
+  //   Eggfood: 40% of chop weight  (protein enrichment)
+  //   Rusk (dry): 25% of chop weight (dry added to frozen chop, absorbs moisture as it thaws)
+  // User enters chop weight, gets eggfood + rusk amounts instantly.
+  const savedChopG=ls.get('av|chop_calc_g')||'';
+  h+=`<div style="margin-top:18px"></div>
+  <div class="sec-title">PLATFORM C MIX CALCULATOR</div>
+  <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+  Enter your chop weight (from freezer). App calculates how much eggfood and dry rusk to add. Rusk is added dry — it absorbs moisture from the frozen chop as it thaws, maximising fresh time in the cage during your 12hr shift.</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="flex:1">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:6px">VEG CHOP WEIGHT (g)</div>
+        <input id="chopCalcInp" type="number" min="0" max="500" step="5"
+          style="width:100%;background:#161d17;border:1px solid var(--cur);border-radius:9px;color:#d4e8d6;font-size:22px;font-family:'DM Mono',monospace;padding:10px 14px;outline:none"
+          placeholder="e.g. 80" value="${savedChopG}"
+          oninput="ls.set('av|chop_calc_g',this.value);document.getElementById('chopCalcResult').innerHTML=calcChopMix(this.value)">
+      </div>
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;padding-top:20px">grams</div>
+    </div>
+    <div id="chopCalcResult">${calcChopMix(savedChopG)}</div>
+    <div style="margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);line-height:1.8">
+      📋 RATIOS USED: Eggfood = 40% of chop · Dry rusk = 25% of chop<br>
+      🧊 Frozen chop + dry rusk = 12hr+ freshness in cage<br>
+      🥚 Eggfood last — sprinkle on top just before serving
+    </div>
+  </div>`;
+
+
+  // ---- Mung calculator ----
+  // Mung tsp per pair per soft-food day by phase
+  const MUNG_TSP={1:0,2:0.5,3:0,4:1,5:0.5,6:0,7:0};
+  // Soft-food days per phase where mung is served
+  const MUNG_DAYS={1:0,2:3,3:0,4:4,5:2,6:0,7:0};
+  // Day labels per phase for reference
+  const MUNG_DAY_LABELS={2:'Sat, Mon, Wed',4:'Sat, Mon, Wed, Fri',5:'Sat, Wed'};
+
+  let totalMungTspWeek=0;
+  const mungPerCage=CAGES.map((name,i)=>{
+    const p=getCagePhase(i);
+    const tsp=(MUNG_TSP[p]||0)*(MUNG_DAYS[p]||0);
+    totalMungTspWeek+=tsp;
+    return{name,p,tsp,days:MUNG_DAYS[p]||0,dayLabel:MUNG_DAY_LABELS[p]||''};
+  });
+  const totalMungTbspWeek=totalMungTspWeek/3;
+  const dryTbspWeek=totalMungTbspWeek/2; // sprouted ≈ 2× dry volume
+  // Flag if any cage is about to move into rearing (hatch approaching)
+  const hatchSoon=CAGES.some((_,i)=>{
+    if(getCagePhase(i)===3){const ed=getEggDate(i);if(ed){const dth=Math.round((new Date(ed+'T00:00:00').setDate(new Date(ed+'T00:00:00').getDate()+18)-today())/(864e5));return dth<=7&&dth>=0;}}return false;
+  });
+
+  h+=`<div style="margin-top:18px"></div>`;
+  h+=`<div class="sec-title">WEEKLY MUNG BEAN CALCULATOR</div>`;
+  h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--cur);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11.5px;color:#9bb39d;line-height:1.6">
+  🌱 Soak <b style="color:var(--text)">Saturday night</b>. Ready Monday morning. Sprouts double in volume — soak half what you need sprouted.</div>`;
+
+  // Per-cage breakdown
+  h+=`<div class="stock-card"><div class="stock-hdr">MUNG NEEDED THIS WEEK — BY CAGE</div>
+  <div style="display:grid;grid-template-columns:1fr 60px 60px 70px;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border)">
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px">CAGE</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-align:center">PHASE</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-align:right">TSP/WK</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-align:right">TBSP/WK</span>
+  </div>
+  ${mungPerCage.map((c,i)=>`<div style="display:grid;grid-template-columns:1fr 60px 60px 70px;gap:6px;padding:9px 14px;border-bottom:1px solid var(--border);align-items:center;background:${i%2?'var(--surface2)':'transparent'}">
+    <div>
+      <div style="font-size:13px;color:var(--text)">${c.name}</div>
+      ${c.dayLabel?`<div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:1px">${c.dayLabel}</div>`:''}
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:11px;color:${PHASES[c.p].accent};text-align:center">${PHASES[c.p].icon} P${c.p}</div>
+    <div style="font-family:'DM Mono',monospace;font-size:13px;color:${c.tsp>0?'var(--text)':'var(--muted)'};text-align:right">${c.tsp>0?c.tsp+' tsp':'—'}</div>
+    <div style="font-family:'DM Mono',monospace;font-size:13px;color:${c.tsp>0?'var(--cur)':'var(--muted)'};text-align:right">${c.tsp>0?(c.tsp/3).toFixed(1)+' tbsp':'—'}</div>
+  </div>`).join('')}
+  <div style="display:grid;grid-template-columns:1fr 60px 60px 70px;gap:6px;padding:11px 14px;background:var(--surface2)">
+    <span style="font-size:13px;color:#fff;font-weight:600">TOTAL SPROUTED</span>
+    <span></span>
+    <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--cur);font-weight:600;text-align:right">${totalMungTspWeek} tsp</span>
+    <span style="font-family:'DM Mono',monospace;font-size:15px;color:var(--cur);font-weight:700;text-align:right">${totalMungTbspWeek.toFixed(1)} tbsp</span>
+  </div>
+  </div>`;
+
+  // Dry amount to soak
+  h+=`<div style="margin-top:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:12px">SATURDAY NIGHT PREP</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;color:var(--text)">Sprouted mung needed</div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">Total for the week</div></div>
+      <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--cur)">${totalMungTbspWeek.toFixed(1)} tbsp</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;color:var(--text)">Dry mung to soak</div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">Sprouts double in volume</div></div>
+      <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--p2)">${dryTbspWeek<=0?'None needed':dryTbspWeek<0.5?'~½ tsp dry':dryTbspWeek<1?'~'+Math.round(dryTbspWeek*3)+' tsp dry':(dryTbspWeek.toFixed(1)+' tbsp dry')}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+      <div><div style="font-size:13px;color:var(--text)">Soak time</div><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">Full submerge → 8–12hr → drain → sprout 12–24hr</div></div>
+      <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">~36hr</span>
+    </div>
+  </div>`;
+
+  // Warning if hatch approaching — rearing will need more mung
+  if(hatchSoon){
+    const rearingExtra=MUNG_TSP[4]*MUNG_DAYS[4]-MUNG_TSP[3]*MUNG_DAYS[3];
+    h+=`<div class="alert warn" style="margin-top:10px">⚡ Hatch approaching — once chicks hatch, mung need increases to <b>1 tsp × 4 days = 4 tsp/wk</b> per pair in rearing. Prepare a larger batch next week.</div>`;
+  }
+
+
+  // Explainer so there's no confusion with the Tracker tab
+  h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--cur);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11.5px;color:#9bb39d;line-height:1.6">
+  🥬 Chop is the <b style="color:var(--text)">vegetable part of Platform C</b> (chop + eggfood + rusk). It is served only on Platform C soft-food days — these match the Tracker tab exactly, so there's no separate feeding.</div>`;
+
+  // Week view section header
+  h+=`<div style="margin-top:18px"></div><div class="sec-title">VEGETABLE CHOP — ${CAGES[S.activeCage].toUpperCase()}</div>`;
+
+  // Phase context line
+  h+=`<div class="phase-card" style="margin-bottom:12px">
+    <div class="pc-top"><span class="pc-icon">${PHASES[cagePhase].icon}</span>
+    <div><div class="pc-label">CURRENT PHASE ${cagePhase}</div><div class="pc-name">${PHASES[cagePhase].name}</div></div></div>
+    <div class="pc-meta"><span>🥬 Chop on ${chopDays.length} soft-food day${chopDays.length===1?'':'s'}/wk</span><span>🥄 ~15g / pair</span></div>
+  </div>`;
+
+  // Week nav
+  h+=`<div class="week-nav"><button onclick="chgWeek(-1)">‹</button>
+  <div class="wk-lbl">${S.weekOffset===0?'📅 This Week':S.weekOffset===-1?'← Last Week':S.weekOffset===1?'→ Next Week':S.weekOffset>1?`+${S.weekOffset} weeks ahead`:`${Math.abs(S.weekOffset)}w ago`}<small>${fmtDisp(wS)} – ${fmtDisp(wE)}</small></div>
+  <button onclick="chgWeek(1)"${S.weekOffset>=4?' disabled style="opacity:.3"':''}>›</button></div>`;
+
+  // Daily chop display — driven by soft-food days; ticking syncs with the softfood checkbox
+  weeks.forEach(({name,date,dateStr,isToday})=>{
+    const serves=chopDays.includes(name);
+    if(serves){
+      // chop ticked = the softfood ('sf') task for that day is done (single source of truth)
+      const checked=getChk(S.activeCage,cagePhase,dateStr,'sf');
+      h+=`<div class="day-row${isToday?' today':''}">
+        <div class="day-hdr"><span class="day-name">${name}</span>
+        ${isToday?'<span class="today-badge">TODAY</span>':''}
+        <span class="date-badge">${fmtDisp(date)}</span>${checked?'<span class="done-badge">✓ SERVED</span>':''}</div>
+        <div class="day-body"><div class="task-row">
+        <button class="chk${checked?' on':''}" data-slot="sf" data-date="${dateStr}" data-phase="${cagePhase}" onclick="togChopChk(this)">
+        <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5l3 3L10 1" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button><div><div class="tsk-lbl">🥬 PLATFORM C (incl. chop)</div>
+        <div class="tsk-txt${checked?' done':''}">~15g chop in mash — grate fresh, strain zucchini. Syncs with Softfood in Tracker.</div></div>
+        </div></div></div>`;
+    } else {
+      h+=`<div class="day-row" style="opacity:.5">
+        <div class="day-hdr"><span class="day-name">${name}</span>
+        <span class="date-badge">${fmtDisp(date)}</span>
+        <span style="margin-left:auto;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">— no soft food / no chop —</span></div>
+      </div>`;
+    }
+  });
+
+  // ---- Monthly calculator card ----
+  h+=`<div style="margin-top:18px"></div><div class="sec-title">MONTHLY CHOP CALCULATOR — WHOLE FLOCK</div>
+  <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+  Based on Platform C soft-food days for each cage's CURRENT phase. Change a phase in Tracker and this recalculates.</div>
+  <div class="stock-card">
+    <div style="display:grid;grid-template-columns:1fr 70px 70px 80px;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border)">
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px">CAGE</span>
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px">PHASE</span>
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-align:right">SF DAYS</span>
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-align:right">G/MONTH</span>
+    </div>
+    ${perCage.map((c,i)=>`<div style="display:grid;grid-template-columns:1fr 70px 70px 80px;gap:6px;padding:9px 14px;border-bottom:1px solid var(--border);align-items:center;background:${i%2?'var(--surface2)':'transparent'}">
+      <span style="font-size:13px;color:var(--text)">${c.name}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:${PHASES[c.p].accent}">${PHASES[c.p].icon} P${c.p}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);text-align:right">${c.days}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--cur);text-align:right">${Math.round(c.gMonth)}g</span>
+    </div>`).join('')}
+    <div style="display:grid;grid-template-columns:1fr 140px 80px;gap:6px;padding:11px 14px;background:var(--surface2);align-items:center">
+      <span style="font-size:13px;color:#fff;font-weight:600">TOTAL / MONTH</span>
+      <span></span>
+      <span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--cur);font-weight:600;text-align:right">${(totalGMonth/1000).toFixed(2)} kg</span>
+    </div>
+  </div>`;
+
+  // ---- Ingredient breakdown ----
+  h+=`<div style="margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:12px">MONTHLY SHOPPING LIST — BY INGREDIENT</div>
+    ${VEG_RATIOS.map(([veg,ratio],i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;${i<2?'border-bottom:1px solid var(--border)':''}">
+      <span style="font-size:13px;color:var(--text)">${veg} <span style="color:var(--muted);font-size:11px">(${ratio*100}%)</span></span>
+      <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--p2)">${Math.round(totalGMonth*ratio)}g</span>
+    </div>`).join('')}
+  </div>
+  <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:8px;line-height:1.7">
+  🧊 Freeze in daily portions. Strain zucchini before freezing. Never refreeze thawed chop — critical in Dammam heat.</div>`;
+
+  return h;
+}
+function calcChopMix(chopGStr){
+  const chopG=parseFloat(chopGStr);
+  if(!chopGStr||isNaN(chopG)||chopG<=0)return'<div style="font-size:13px;color:var(--muted);font-family:\'DM Mono\',monospace;padding:8px 0">Enter chop weight above to see the mix</div>';
+  const eggfoodG=Math.round(chopG*0.40);
+  const ruskG=Math.round(chopG*0.25);
+  const totalG=chopG+eggfoodG+ruskG;
+  // Per cage (divide by number of active cages with Phase 4)
+  const activeCageCount=Math.max(1,CAGES.length);
+  const perPairChop=Math.round(chopG/activeCageCount);
+  const perPairEgg=Math.round(eggfoodG/activeCageCount);
+  const perPairRusk=Math.round(ruskG/activeCageCount);
+  return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div style="background:color-mix(in srgb,var(--cur) 8%,transparent);border:1px solid color-mix(in srgb,var(--cur) 20%,transparent);border-radius:10px;padding:12px;text-align:center">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--cur);margin-bottom:4px">🥬 VEG CHOP</div>
+      <div style="font-size:26px;font-weight:700;color:var(--cur)">${chopG}g</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px">from freezer</div>
+    </div>
+    <div style="background:color-mix(in srgb,#f7a84f 8%,transparent);border:1px solid color-mix(in srgb,#f7a84f 20%,transparent);border-radius:10px;padding:12px;text-align:center">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:#f7a84f;margin-bottom:4px">🥚 EGGFOOD</div>
+      <div style="font-size:26px;font-weight:700;color:#f7a84f">${eggfoodG}g</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px">sprinkle on top</div>
+    </div>
+    <div style="background:color-mix(in srgb,#d4a84f 8%,transparent);border:1px solid color-mix(in srgb,#d4a84f 20%,transparent);border-radius:10px;padding:12px;text-align:center">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:#d4a84f;margin-bottom:4px">🍞 DRY RUSK</div>
+      <div style="font-size:26px;font-weight:700;color:#d4a84f">${ruskG}g</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px">add dry — absorbs as chop thaws</div>
+    </div>
+    <div style="background:color-mix(in srgb,#aaa 8%,transparent);border:1px solid color-mix(in srgb,#aaa 15%,transparent);border-radius:10px;padding:12px;text-align:center">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:#aaa;margin-bottom:4px">📦 TOTAL MIX</div>
+      <div style="font-size:26px;font-weight:700;color:var(--text)">${totalG}g</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px">for all ${activeCageCount} cage${activeCageCount===1?'':'s'}</div>
+    </div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Mono',monospace;font-size:11px">
+    <div style="color:var(--muted);font-size:9px;letter-spacing:1px;margin-bottom:8px">PER CAGE (${activeCageCount} cage${activeCageCount===1?'':'s'})</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <span style="color:var(--cur)">🥬 ${perPairChop}g chop</span>
+      <span style="color:#f7a84f">🥚 ${perPairEgg}g eggfood</span>
+      <span style="color:#d4a84f">🍞 ${perPairRusk}g rusk</span>
+    </div>
+  </div>`;
+}
+
+function rStock(){
+  return`<div class="sec-title">STOCK INVENTORY</div>
+  <div class="stock-card"><div class="stock-hdr">UPDATE QUANTITIES AFTER RESTOCKING</div>
+  ${STOCK_ITEMS.map(item=>{
+    const v=ls.get(`av|stock|${item.key}`)||'';
+    const isLow=v!==''&&parseFloat(v)<=item.low;
+    return`<div class="stock-row"><div class="stock-name">${item.name}</div>
+    <input type="number" class="s-inp${isLow?' low':''}" value="${v}" placeholder="qty" step="any"
+    onchange="saveStock('${item.key}',this.value,this)" title="Alert below ${item.low}${item.unit}">
+    <span class="s-unit">${item.unit}</span></div>`;
+  }).join('')}</div>
+  <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:8px;line-height:1.9">
+  🔴 Red = below reorder threshold<br>Platform A &lt;0.5kg · Breedmax &lt;50g · Calcium &lt;50ml · Eggfood &lt;100g</div>`;
+}
+
+function rQC(){
+  return`<div class="sec-title">DAILY QUALITY CHECKS</div>
+  ${[['🤏','TEXTURE SQUEEZE AUDIT','Every morning squeeze Platform C. If damp residue stays on hand, add dry eggfood until it crumbles completely.'],
+    ['⏰','12-HOUR EXTRACTION RULE','Supplemented water fonts (Muta-Vit, Multivitamins, Calcium, Ornisol Sel E) degrade rapidly. Empty and scrub at 5:00 PM.'],
+    ['🌱','SPROUT HYGIENE PROTOCOL','Flash-boil sprouts 30–60 seconds after sprouting. Never feed sprouts with sour smell or sticky surface residue.']
+  ].map(([ic,t,d])=>`<div class="qc-card"><span class="qc-icon">${ic}</span><div><div class="qc-title">${t}</div><div class="qc-desc">${d}</div></div></div>`).join('')}
+  <div class="prep-table"><div class="prep-hdr">MONTHLY PLATFORM C PREP — 4 PAIRS</div>
+  ${[['Zucchini','40%','720g'],['Carrot','40%','720g'],['Sweet Potato','20%','360g'],['Sprouted Mung','Add.','350–400g'],['TOTAL BASE','100%','1.8 kg']
+  ].map(([n,r,q],i)=>`<div class="prep-row${i===4?' total':''}"><div class="pi">${n}</div><div class="pr">${r}</div><div class="pq">${q}</div></div>`).join('')}</div>
+  <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+  <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px">SPROUTED MUNG BY PHASE</div>
+  ${[[1,'🌿','ZERO — Strictly forbidden. Prevents premature hormone surges.','#5fbf8a'],
+    [2,'🔥','½ tsp on active softfood days to trigger courtship drive.','#e8a84a'],
+    [3,'🥚','ZERO during incubation — hen is sitting. No hormonal food needed.','#b07de8'],
+    [4,'🐣','1 full tsp in every softfood cup daily — live protein for chick growth. Exclude Sun/Thu.','#e064a0'],
+    [5,'🪶','½ tsp on active softfood days only to aid quill growth.','#5aabdf'],
+    [6,'🐤','Minimal — none needed for growth. Avoid hormone triggers in young birds.','#d4a72e'],
+    [7,'🏆','None. Keep gut clean and feather settled — focus on bathing & show-cage training.','#c0a020']
+  ].map(([p,ic,r,c])=>`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+  <span style="font-size:16px;flex-shrink:0">${ic}</span>
+  <div><div style="font-family:'DM Mono',monospace;font-size:10px;color:${c};margin-bottom:2px">${p===3?'INCUBATION':p===4?'CHICK REARING':p===5?'MOLTING':p===6?'YOUNG BIRD':p===7?'SHOW PREP':'PHASE '+p}</div>
+  <div style="font-size:12.5px;color:#aaa;line-height:1.5">${r}</div></div></div>`).join('')}
+  </div>`;
+}
+
+// INTERACTIONS
+function selCage(i){S.activeCage=i;S.activePhase=getCagePhase(i);S.weekOffset=0;setAccent(PHASES[S.activePhase].accent);renderAll()}
+function addCage(){
+  // Bypass modal system entirely — build inline form in the header
+  const row=document.getElementById('cageRow');
+  if(!row)return;
+  // If form already open, close it
+  if(document.getElementById('_addCageForm')){
+    document.getElementById('_addCageForm').remove();
+    return;
+  }
+  const form=document.createElement('div');
+  form.id='_addCageForm';
+  form.style.cssText='display:flex;gap:6px;align-items:center;padding:8px 0 4px;width:100%';
+  const defaultName='Cage '+(CAGES.length+1);
+  form.innerHTML=
+    '<input id="_cageNameInp" style="flex:1;background:#161d17;border:1px solid var(--cur);border-radius:8px;color:#d4e8d6;font-size:14px;font-family:DM Mono,monospace;padding:8px 11px;outline:none" value="'+defaultName+'" autocomplete="off">'+
+    '<button onclick="confirmAddCage()" style="background:var(--cur);border:none;border-radius:8px;color:#000;font-size:13px;font-family:DM Mono,monospace;font-weight:700;padding:8px 14px;cursor:pointer">Add</button>'+
+    '<button onclick="cancelAddCage()" style="background:transparent;border:1px solid #1e271f;border-radius:8px;color:#4a5e4c;font-size:13px;font-family:DM Mono,monospace;padding:8px 11px;cursor:pointer">✕</button>';
+  // Insert form below cage row
+  row.parentNode.insertBefore(form,row.nextSibling);
+  setTimeout(()=>{
+    const inp=document.getElementById('_cageNameInp');
+    if(inp){inp.focus();inp.select();}
+  },50);
+  // Allow Enter key
+  setTimeout(()=>{
+    const inp=document.getElementById('_cageNameInp');
+    if(inp)inp.onkeydown=function(e){if(e.key==='Enter')confirmAddCage();if(e.key==='Escape')cancelAddCage();};
+  },60);
+}
+function confirmAddCage(){
+  const inp=document.getElementById('_cageNameInp');
+  const name=(inp?inp.value:'').trim()||('Cage '+(CAGES.length+1));
+  cancelAddCage(); // remove form first
+  CAGES.push(name);
+  saveCageList();
+  S.activeCage=CAGES.length-1;
+  S.activePhase=getCagePhase(S.activeCage);
+  S.weekOffset=0;
+  setAccent(PHASES[S.activePhase]?.accent||'#5fbf8a');
+  toast(name+' added');
+  renderAll();
+}
+function cancelAddCage(){
+  const f=document.getElementById('_addCageForm');
+  if(f)f.remove();
+}
+function renameCage(i){
+  const row=document.getElementById('cageRow');
+  if(!row)return;
+  if(document.getElementById('_renameCageForm')){document.getElementById('_renameCageForm').remove();return;}
+  const form=document.createElement('div');
+  form.id='_renameCageForm';
+  form.style.cssText='display:flex;gap:6px;align-items:center;padding:8px 0 4px;width:100%';
+  form.innerHTML=
+    '<input id="_renameInp" style="flex:1;background:#161d17;border:1px solid var(--cur);border-radius:8px;color:#d4e8d6;font-size:14px;font-family:DM Mono,monospace;padding:8px 11px;outline:none" value="'+CAGES[i].replace(/"/g,'&quot;')+'" autocomplete="off">'+
+    '<button onclick="confirmRenameCage('+i+')" style="background:var(--cur);border:none;border-radius:8px;color:#000;font-size:13px;font-family:DM Mono,monospace;font-weight:700;padding:8px 14px;cursor:pointer">Save</button>'+
+    '<button onclick="cancelRenameCage()" style="background:transparent;border:1px solid #1e271f;border-radius:8px;color:#4a5e4c;font-size:13px;font-family:DM Mono,monospace;padding:8px 11px;cursor:pointer">✕</button>';
+  row.parentNode.insertBefore(form,row.nextSibling);
+  setTimeout(()=>{const inp=document.getElementById('_renameInp');if(inp){inp.focus();inp.select();inp.onkeydown=e=>{if(e.key==='Enter')confirmRenameCage(i);if(e.key==='Escape')cancelRenameCage();};}},50);
+}
+function confirmRenameCage(i){
+  const inp=document.getElementById('_renameInp');
+  const name=(inp?inp.value:'').trim();
+  if(!name){cancelRenameCage();return;}
+  cancelRenameCage();
+  CAGES[i]=name;
+  saveCageList();
+  toast('Renamed to '+name);
+  renderAll();
+}
+function cancelRenameCage(){const f=document.getElementById('_renameCageForm');if(f)f.remove();}
+
+function deleteCage(i){
+  if(CAGES.length<=1){toast('Must keep at least one cage','warn');return;}
+  const row=document.getElementById('cageRow');
+  if(!row)return;
+  if(document.getElementById('_deleteCageForm')){document.getElementById('_deleteCageForm').remove();return;}
+  const form=document.createElement('div');
+  form.id='_deleteCageForm';
+  form.style.cssText='display:flex;gap:6px;align-items:center;padding:8px 0 4px;width:100%;flex-wrap:wrap';
+  form.innerHTML=
+    '<div style="width:100%;font-family:DM Mono,monospace;font-size:11px;color:#e85a5a;padding:4px 0 8px">Delete <b>'+CAGES[i]+'</b>? This cannot be undone.</div>'+
+    '<button onclick="confirmDeleteCage('+i+')" style="background:#e85a5a;border:none;border-radius:8px;color:#fff;font-size:13px;font-family:DM Mono,monospace;font-weight:700;padding:8px 16px;cursor:pointer">Delete</button>'+
+    '<button onclick="cancelDeleteCage()" style="background:transparent;border:1px solid #1e271f;border-radius:8px;color:#4a5e4c;font-size:13px;font-family:DM Mono,monospace;padding:8px 14px;cursor:pointer">Cancel</button>';
+  row.parentNode.insertBefore(form,row.nextSibling);
+}
+function confirmDeleteCage(i){
+  cancelDeleteCage();
+  CAGES.splice(i,1);
+  saveCageList();
+  if(S.activeCage>=CAGES.length)S.activeCage=CAGES.length-1;
+  S.activePhase=getCagePhase(S.activeCage);
+  toast('Cage deleted','warn');
+  renderAll();
+}
+function cancelDeleteCage(){const f=document.getElementById('_deleteCageForm');if(f)f.remove();}
+function selPhase(p){S.activePhase=p;setCagePhase(S.activeCage,p);setAccent(PHASES[p].accent);renderAll()}
+function switchTab(t){S.activeTab=t;renderAll()}
+function chgWeek(d){if(S.weekOffset+d>4)return;if(S.weekOffset+d<-52)return;S.weekOffset+=d;renderAll()}
+function togChk(btn){const sl=btn.dataset.slot,dt=btn.dataset.date,cur=getChk(S.activeCage,S.activePhase,dt,sl);setChk(S.activeCage,S.activePhase,dt,sl,!cur);renderAll()}
+function togChopChk(btn){const dt=btn.dataset.date,p=parseInt(btn.dataset.phase),cur=getChk(S.activeCage,p,dt,'sf');setChk(S.activeCage,p,dt,'sf',!cur);renderAll()}
+function saveNote(date,val){setNotes(S.activeCage,date,val)}
+function startPhase(){const d=today();setPhaseStart(S.activeCage,fmtDate(d));toast('▶ Phase started today');renderAll();}
+function resetPhase(){
+  tapConfirm('resetPhase'+S.activeCage,'Tap ↺ again to reset the timer',function(){
+    try{ls.del('av|cage'+S.activeCage+'|pstart');}catch(e){}
+    toast('↺ Timer reset');
+    renderAll();
+  });
+}
+function setShow(d){setShowDate(S.activeCage,d);renderAll();}
+function eggLaid(){
+  // Direct: records egg date, switches cage + screen to Incubation immediately
+  const todayStr=fmtDate(today());
+  setEggDate(S.activeCage,todayStr);
+  setCagePhase(S.activeCage,3);
+  setPhaseStart(S.activeCage,todayStr);
+  S.activePhase=3;
+  setAccent(PHASES[3].accent);
+  toast('🥚 Switched to Incubation — Day 1 started');
+  renderAll();
+}
+function chicksHatched(){
+  // Direct: switches cage + screen to Chick Rearing immediately
+  const todayStr=fmtDate(today());
+  setCagePhase(S.activeCage,4);
+  setPhaseStart(S.activeCage,todayStr);
+  S.activePhase=4;
+  setAccent(PHASES[4].accent);
+  toast('🐣 Switched to Chick Rearing — Day 1');
+  renderAll();
+}
+function eggLaidClear(){
+  tapConfirm('eggClear'+S.activeCage,'Tap ✕ again to clear egg record',function(){
+    ls.del('av|cage'+S.activeCage+'|eggdate');
+    toast('Egg record cleared');
+    renderAll();
+  });
+}
+function saveTemp(){const v=document.getElementById('tInp').value;if(!v)return;ls.set(`av|temp|${fmtDate(today())}`,v);renderAll()}
+function saveStock(key,val,el){ls.set(`av|stock|${key}`,val);const item=STOCK_ITEMS.find(x=>x.key===key);if(item&&val!==''&&parseFloat(val)<=item.low)el.classList.add('low');else el.classList.remove('low');renderAlerts()}
+function saveWeight(key){const inp=document.getElementById(`wi_${key}`);if(!inp||!inp.value)return;const log=ls.getJ(`av|weight|${key}`,[]);log.push({date:fmtDisp(today()),g:parseFloat(inp.value)});ls.setJ(`av|weight|${key}`,log);inp.value='';renderAll()}
+function markShavingsRefreshed(){
+  ls.set(`av|shavings|c${S.activeCage}`,fmtDate(today()));
+  toast('🪵 Shavings refreshed — reminder resets in 5 days');
+  renderAll();
+}
+function newClutch(){const cl=ls.getJ(`av|clutch|c${S.activeCage}`,[]);cl.push({started:fmtDisp(today()),eggs:[{layDate:'',status:'unknown'}]});ls.setJ(`av|clutch|c${S.activeCage}`,cl);renderAll()}
+function addEgg(ci){const cl=ls.getJ(`av|clutch|c${S.activeCage}`,[]);cl[ci].eggs.push({layDate:'',status:'unknown'});ls.setJ(`av|clutch|c${S.activeCage}`,cl);renderAll()}
+function updEgg(ci,ei,field,val){
+  const cl=ls.getJ(`av|clutch|c${S.activeCage}`,[]);
+  cl[ci].eggs[ei][field]=val;
+  // When marked hatched, stamp today as the hatch date (for ringing reminder).
+  // If changed away from hatched, clear the stamp.
+  if(field==='status'){
+    if(val==='hatched'&&!cl[ci].eggs[ei].hatchedOn){cl[ci].eggs[ei].hatchedOn=fmtDate(today());}
+    else if(val!=='hatched'){delete cl[ci].eggs[ei].hatchedOn;delete cl[ci].eggs[ei].ringed;}
+  }
+  ls.setJ(`av|clutch|c${S.activeCage}`,cl);
+  renderAll();
+}
+function delEgg(ci,ei){
+  const cl=ls.getJ(`av|clutch|c${S.activeCage}`,[]);
+  if(!cl[ci]||!cl[ci].eggs[ei])return;
+  cl[ci].eggs.splice(ei,1);
+  ls.setJ(`av|clutch|c${S.activeCage}`,cl);
+  toast('Egg removed','warn');
+  renderAll();
+}
+function ringChick(ci,ei){
+  // Inline prompt for ring number, then register the chick in the bird registry
+  const existing=document.getElementById('_ringForm');
+  if(existing)existing.remove();
+  // Find the egg row's parent container to inject the form after the clutch
+  const content=document.getElementById('mainContent');
+  if(!content)return;
+  // Derive parents from the cage's latest pairing
+  const pairings=ls.getJ(`av|pairings|c${S.activeCage}`,[]);
+  const lastPair=pairings.length?pairings[pairings.length-1]:null;
+  const sire=lastPair?lastPair.cock:'';
+  const dam=lastPair?lastPair.hen:'';
+  const form=document.createElement('div');
+  form.id='_ringForm';
+  form.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);width:92%;max-width:440px;background:var(--surface);border:1px solid var(--cur);border-radius:14px;padding:16px;z-index:2500;box-shadow:0 20px 60px rgba(0,0,0,.6)';
+  form.innerHTML=
+    '<div style="font-family:DM Sans,sans-serif;font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">💍 Ring chick & register</div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:12px;font-family:DM Mono,monospace">Enter the ring number. Colour & sex can be added later.</div>'+
+    '<div style="font-family:DM Mono,monospace;font-size:9px;color:var(--muted);margin-bottom:4px">RING NUMBER</div>'+
+    '<input id="_ringNumInp" style="width:100%;background:#161d17;border:1px solid var(--cur);border-radius:9px;color:#d4e8d6;font-size:15px;font-family:DM Mono,monospace;padding:10px 12px;outline:none;margin-bottom:10px" placeholder="e.g. KSA26-014" autocomplete="off">'+
+    (sire||dam?'<div style="font-size:11px;color:var(--muted);font-family:DM Mono,monospace;margin-bottom:12px;padding:8px 10px;background:var(--surface2);border-radius:8px">Parents (from pairing): '+(sire?'♂ '+sire:'?')+' × '+(dam?'♀ '+dam:'?')+'</div>':'<div style="font-size:11px;color:var(--warn);font-family:DM Mono,monospace;margin-bottom:12px">No pairing logged — parents will be blank (add later)</div>')+
+    '<div style="display:flex;gap:8px">'+
+    '<button onclick="cancelRing()" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--muted);font-size:13px;font-family:DM Mono,monospace;padding:11px;cursor:pointer">Cancel</button>'+
+    '<button onclick="confirmRing('+ci+','+ei+')" style="flex:1;background:var(--cur);border:none;border-radius:9px;color:#000;font-size:13px;font-family:DM Mono,monospace;font-weight:700;padding:11px;cursor:pointer">Ring & Register</button>'+
+    '</div>';
+  document.body.appendChild(form);
+  setTimeout(()=>{const inp=document.getElementById('_ringNumInp');if(inp){inp.focus();inp.onkeydown=e=>{if(e.key==='Enter')confirmRing(ci,ei);if(e.key==='Escape')cancelRing();};}},60);
+}
+function cancelRing(){const f=document.getElementById('_ringForm');if(f)f.remove();}
+function confirmRing(ci,ei){
+  const inp=document.getElementById('_ringNumInp');
+  const ringNum=(inp?inp.value:'').trim();
+  if(!ringNum){toast('Enter a ring number','warn');return;}
+  cancelRing();
+  // Mark egg ringed
+  const cl=ls.getJ(`av|clutch|c${S.activeCage}`,[]);
+  if(cl[ci]&&cl[ci].eggs[ei]){
+    cl[ci].eggs[ei].ringed=true;
+    cl[ci].eggs[ei].ringedOn=fmtDisp(today());
+    cl[ci].eggs[ei].ringNum=ringNum;
+    ls.setJ(`av|clutch|c${S.activeCage}`,cl);
+  }
+  // Derive parents from latest pairing in this cage
+  const pairings=ls.getJ(`av|pairings|c${S.activeCage}`,[]);
+  const lastPair=pairings.length?pairings[pairings.length-1]:null;
+  const sire=lastPair?lastPair.cock:'';
+  const dam=lastPair?lastPair.hen:'';
+  // Hatch date as DOB
+  const hatchedOn=cl[ci]&&cl[ci].eggs[ei]?cl[ci].eggs[ei].hatchedOn:'';
+  // Register chick in this cage's bird registry
+  const birds=ls.getJ(`av|birds|c${S.activeCage}`,[]);
+  // Avoid duplicate if same ring already registered
+  if(birds.some(b=>b.ring===ringNum)){toast('💍 Ringed (already in registry)');renderAll();return;}
+  birds.push({
+    ring:ringNum,
+    sex:'Unknown',
+    dob:hatchedOn||'',
+    color:'',
+    ringColor:'',
+    sire:sire,
+    dam:dam,
+    notes:'Bred '+(hatchedOn?fmtDisp(new Date(hatchedOn+'T00:00:00')):'this season')+' in '+CAGES[S.activeCage]+' — parents recorded at ringing'+((sire||dam)?' ('+(sire||'?')+' × '+(dam||'?')+')':'')+'. Parents are fixed and will not change if this cage is re-paired.'
+  });
+  ls.setJ(`av|birds|c${S.activeCage}`,birds);
+  toast('💍 Ringed & added to registry as '+ringNum);
+  renderAll();
+}
+function unringChick(ci,ei){
+  const cl=ls.getJ(`av|clutch|c${S.activeCage}`,[]);
+  if(!cl[ci]||!cl[ci].eggs[ei])return;
+  delete cl[ci].eggs[ei].ringed;
+  delete cl[ci].eggs[ei].ringedOn;
+  delete cl[ci].eggs[ei].ringNum;
+  ls.setJ(`av|clutch|c${S.activeCage}`,cl);
+  renderAll();
+}
+// Tap-twice confirm — reliable replacement for modal confirmation on all devices
+let _tapConfirm={key:null,t:0};
+function tapConfirm(key,msg,fn){
+  const now=Date.now();
+  if(_tapConfirm.key===key&&now-_tapConfirm.t<3500){
+    _tapConfirm={key:null,t:0};fn();
+  } else {
+    _tapConfirm={key,t:now};
+    toast(msg||'Tap again to confirm','warn');
+  }
+}
+function delClutch(ci){tapConfirm('delClutch'+ci,'Tap ✕ again to delete this clutch',()=>{const cl=ls.getJ(`av|clutch|c${S.activeCage}`,[]);cl.splice(ci,1);ls.setJ(`av|clutch|c${S.activeCage}`,cl);toast('Clutch deleted','warn');renderAll();});}
+
+function exportCSV(){
+  const rows=[['Cage','Phase','Date','Day','Softfood','Seed','Water','Notes']];
+  const seen=new Set();
+  for(let i=0;i<ls.length;i++){
+    const k=ls.key(i);if(!k.startsWith('av|c'))continue;
+    const p=k.split('|');if(p.length<5)continue;
+    const ci=parseInt(p[1].replace('c','')),phase=parseInt(p[2].replace('p','')),dateStr=p[3];
+    if(!dateStr.match(/\d{4}-\d{2}-\d{2}/))continue;
+    const uid=`${ci}_${phase}_${dateStr}`;if(seen.has(uid))continue;seen.add(uid);
+    const sf=getChk(ci,phase,dateStr,'sf')?'✓':'',sd=getChk(ci,phase,dateStr,'sd')?'✓':'',wt=getChk(ci,phase,dateStr,'wt')?'✓':'';
+    const note=getNotes(ci,dateStr).replace(/,/g,' ');
+    const d=new Date(dateStr+'T00:00:00'),dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+    rows.push([CAGES[ci],`Phase ${phase}`,dateStr,dn,sf,sd,wt,note]);
+  }
+  const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`aviary-log-${fmtDate(today())}.csv`;a.click();URL.revokeObjectURL(url);
+}
+
+// ── Auto weekly backup ──
+// Runs silently on app load. If 7+ days since last backup, downloads JSON automatically.
+function autoWeeklyBackup(){
+  try{
+    const INTERVAL_DAYS=7;
+    const lastKey='av|last_auto_backup';
+    const last=ls.get(lastKey);
+    const now=today();
+    const nowStr=fmtDate(now);
+    if(last){
+      const daysSince=Math.round((now-new Date(last+'T00:00:00'))/(864e5));
+      if(daysSince<INTERVAL_DAYS)return; // not time yet
+    }
+    // Collect all data
+    const data={};
+    try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('av|'))data[k]=localStorage.getItem(k);}}catch(e){}
+    try{for(let i=0;i<ls.length;i++){const k=ls.key(i);if(k&&k.startsWith('av|')&&!data[k])data[k]=ls.get(k);}}catch(e){}
+    if(Object.keys(data).length<2)return; // not enough data, skip
+    // Generate and download backup
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='aviary-auto-backup-'+nowStr+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    // Record the backup date
+    ls.set(lastKey,nowStr);
+    // Delayed toast so it doesn't clash with app init
+    setTimeout(()=>toast('📦 Weekly backup saved automatically'),1500);
+  }catch(e){
+    console.warn('Auto backup failed:',e.message);
+  }
+}
+
+try{
+  S.activePhase=getCagePhase(0);
+  renderAll();
+  // Run auto backup after a short delay so the UI loads first
+  setTimeout(autoWeeklyBackup, 2000);
+}catch(e){
+  console.error('Init error:',e);
+  document.getElementById('mainContent').innerHTML=
+    '<div style="padding:30px 20px;font-family:DM Mono,monospace;color:#e85a5a;font-size:13px;line-height:1.8">'+
+    '<div style="font-size:18px;margin-bottom:12px">⚠ Load Error</div>'+
+    '<div style="color:#aaa;margin-bottom:8px">'+e.message+'</div>'+
+    '<div style="color:#666;font-size:11px">Try opening this file in Chrome or Safari browser instead of the Files app.</div>'+
+    '</div>';
+}
+setInterval(()=>{const d=new Date(),days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];const el=document.getElementById('dateDisp');if(el)el.innerHTML=`<strong>${days[d.getDay()]}</strong> · ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;renderAlerts();},60000);
+</script>
+</body>
+</html>
