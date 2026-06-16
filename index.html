@@ -729,26 +729,30 @@ function setAccent(c){if(document.documentElement)document.documentElement.style
 // ALERTS
 function renderAlerts(){
   const alerts=[];
-  CAGES.forEach((_,i)=>{
-    const p=getCagePhase(i);const w=weeksInPhase(i,p);if(w===null)return;
-    if(p===7)return; // Young Bird is open-ended; no transition alarm
-    const max=PHASES[p].max;
-    const pname=p===3?'Egg Laying':p===4?'Incubation':p===5?'Chick Rearing':p===7?'Young':p===8?'Show Prep':'Phase '+p;
-    if(w>=max)alerts.push({t:'danger',m:`⚠ ${CAGES[i]}: Week ${w} of ${pname} — transition overdue!`});
-    else if(w>=max-1)alerts.push({t:'warn',m:`⏰ ${CAGES[i]}: Week ${w}/${max} — ${pname} ending soon`});
-  });
+  {
+    const i=S.activeCage;
+    const p=getCagePhase(i);const w=weeksInPhase(i,p);
+    if(w!==null&&p!==7){ // Young Bird is open-ended; no transition alarm
+      const max=PHASES[p].max;
+      const pname=p===3?'Egg Laying':p===4?'Incubation':p===5?'Chick Rearing':p===7?'Young':p===8?'Show Prep':'Phase '+p;
+      if(w>=max)alerts.push({t:'danger',m:`⚠ ${CAGES[i]}: Week ${w} of ${pname} — transition overdue!`});
+      else if(w>=max-1)alerts.push({t:'warn',m:`⏰ ${CAGES[i]}: Week ${w}/${max} — ${pname} ending soon`});
+    }
+  }
   STOCK_ITEMS.forEach(item=>{
     const v=parseFloat(ls.get(`av|stock|${item.key}`)||'999');
     if(v<=item.low)alerts.push({t:'warn',m:`📦 Low stock: ${item.name} (${v}${item.unit})`});
   });
   const tv=ls.get(`av|temp|${fmtDate(today())}`);
   if(tv&&parseFloat(tv)>=40)alerts.push({t:'danger',m:`🌡️ HEAT ALERT: ${tv}°C today — check cooling!`});
-  // Hatch approaching alert
-  CAGES.forEach((_,i)=>{
+  // Hatch approaching alert (active cage only)
+  {
+    const i=S.activeCage;
     if(getCagePhase(i)===4){const ed=getEggDate(i);if(ed){const dth=Math.round((new Date(ed+'T00:00:00').setDate(new Date(ed+'T00:00:00').getDate()+18)-today())/(864e5));if(dth<=2&&dth>=0)alerts.push({t:'warn',m:`🐣 ${CAGES[i]}: Hatch ${dth===0?'TODAY':dth+'d away'} — prepare nest`});}}
-  });
-  // Fertility candling reminder — eggs 6–9 days old still marked Pending
-  CAGES.forEach((_,i)=>{
+  }
+  // Fertility candling reminder — eggs 6–9 days old still marked Pending (active cage only)
+  {
+    const i=S.activeCage;
     const cl=ls.getJ(`av|clutch|c${i}`,[]);
     let pendingDue=[];
     cl.forEach((c,ci)=>{
@@ -768,9 +772,10 @@ function renderAlerts(){
         if(d>=6&&d<=9)alerts.push({t:'info',m:`🕯️ ${CAGES[i]}: First egg is ${d}d old — candle to check fertility`});
       }
     }
-  });
-  // Chick ringing reminder — hatched chicks at day 6–10 (ideal day 7) not yet ringed
-  CAGES.forEach((_,i)=>{
+  }
+  // Chick ringing reminder — hatched chicks at day 6–10 (ideal day 7) not yet ringed (active cage only)
+  {
+    const i=S.activeCage;
     const cl=ls.getJ(`av|clutch|c${i}`,[]);
     let ringDue=[],ringSoon=[],ringUrgent=[];
     cl.forEach((c,ci)=>{
@@ -786,10 +791,11 @@ function renderAlerts(){
     if(ringSoon.length)alerts.push({t:'info',m:`💍 ${CAGES[i]}: ${ringSoon.join(', ')} ready to ring tomorrow (day 6)`});
     if(ringDue.length)alerts.push({t:'warn',m:`💍 ${CAGES[i]}: RING ${ringDue.join(', ')} now — ideal window (day 6–8)`});
     if(ringUrgent.length)alerts.push({t:'danger',m:`💍 ${CAGES[i]}: Ring ${ringUrgent.join(', ')} TODAY — window closing (toes nearly too big)`});
-  });
+  }
   // Millet in nest reminder — put spray millet in nest box at day 21 (chick 3 weeks old)
-  // so chicks start learning to eat independently
-  CAGES.forEach((_,i)=>{
+  // so chicks start learning to eat independently (active cage only)
+  {
+    const i=S.activeCage;
     const cl=ls.getJ(`av|clutch|c${i}`,[]);
     let milletDue=[],milletOn=[];
     cl.forEach(c=>{
@@ -803,30 +809,31 @@ function renderAlerts(){
     });
     if(milletDue.length)alerts.push({t:'warn',m:`🌾 ${CAGES[i]}: E${milletDue.join(',')} is 3 weeks old — place spray millet in nest box today so chicks start learning to eat`});
     else if(milletOn.length)alerts.push({t:'info',m:`🌾 ${CAGES[i]}: Millet in nest — keep spray millet available until chicks fledge (~week 6)`});
-  });
+  }
   // Wood shavings refresh reminder — every 5 days during chick rearing to maintain grip
-  // and prevent splayed legs. Fire from hatch through fledging (~day 42)
-  CAGES.forEach((_,i)=>{
-    if(getCagePhase(i)!==5)return;
-    const cl=ls.getJ(`av|clutch|c${i}`,[]);
-    const hasChicks=cl.some(c=>c.eggs.some(e=>e.status==='hatched'&&e.hatchedOn));
-    if(!hasChicks)return;
-    const lastRefresh=ls.get(`av|shavings|c${i}`);
-    const daysSince=lastRefresh?Math.round((today()-new Date(lastRefresh+'T00:00:00'))/(864e5)):99;
-    if(daysSince>=5){
-      alerts.push({t:'warn',m:`🪵 ${CAGES[i]}: Refresh wood shavings in nest box — chicks need grip to prevent splayed legs (last: ${lastRefresh?lastRefresh:'never recorded'})`});
+  // and prevent splayed legs. Fire from hatch through fledging (~day 42) (active cage only)
+  {
+    const i=S.activeCage;
+    if(getCagePhase(i)===5){
+      const cl=ls.getJ(`av|clutch|c${i}`,[]);
+      const hasChicks=cl.some(c=>c.eggs.some(e=>e.status==='hatched'&&e.hatchedOn));
+      if(hasChicks){
+        const lastRefresh=ls.get(`av|shavings|c${i}`);
+        const daysSince=lastRefresh?Math.round((today()-new Date(lastRefresh+'T00:00:00'))/(864e5)):99;
+        if(daysSince>=5){
+          alerts.push({t:'warn',m:`🪵 ${CAGES[i]}: Refresh wood shavings in nest box — chicks need grip to prevent splayed legs (last: ${lastRefresh?lastRefresh:'never recorded'})`});
+        }
+      }
     }
-  });
-  // Laying calcium reminder — when a cage is in the Egg Laying phase, remind to add
-  // water-soluble calcium on the schedule days (Sat/Tue/Fri). The laying hen has the
-  // highest calcium demand and water delivery guards against egg-binding/prolapse.
-  CAGES.forEach((_,i)=>{
-    if(getCagePhase(i)!==3)return;
+  }
+  // Laying calcium reminder — only for the cage currently being viewed, to avoid
+  // cluttering other cages' views. Reminds on the schedule days (Sat/Tue/Fri).
+  if(getCagePhase(S.activeCage)===3){
     const dayName=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][today().getDay()];
     if(dayName==='Sat'||dayName==='Tue'||dayName==='Fri'){
-      alerts.push({t:'warn',m:`💧 ${CAGES[i]}: Laying hen — add Liquid Calcium + D3 to water today (${dayName}). Flush font at 12hr. Guards against egg-binding.`});
+      alerts.push({t:'warn',m:`💧 ${CAGES[S.activeCage]}: Laying hen — add Liquid Calcium + D3 to water today (${dayName}). Flush font at 12hr. Guards against egg-binding.`});
     }
-  });
+  }
   // Bird reaching breeding age — active cage only
   ls.getJ(`av|birds|c${S.activeCage}`,[]).forEach(b=>{
     if(b.dob){
