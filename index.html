@@ -1638,17 +1638,25 @@ function importAllData(input){
       const data=JSON.parse(r.result);
       const count=Object.keys(data).length;
       if(!count){toast('Backup file is empty','warn');return;}
-      // Use tap-twice since modalConfirm is unreliable on device
-      tapConfirm('importData','Found '+count+' records — tap Import again to confirm overwrite',()=>{
-        Object.entries(data).forEach(([k,v])=>ls.set(k,v));
-        CAGES=(()=>{try{const v=JSON.parse(ls.get('av|cagelist'));if(Array.isArray(v)&&v.length)return v;}catch{}return['Cage 1','Cage 2','Cage 3','Cage 4'];})();
-        S.activeCage=0;
-        S.activePhase=getCagePhase(0);
-        toast('✓ Data imported — '+count+' records loaded');
-        renderAll();
+      // Import immediately — selecting the file is already a deliberate action
+      let imported=0;
+      Object.entries(data).forEach(([k,v])=>{
+        if(k&&k.startsWith('av|')){ls.set(k,v);imported++;}
       });
-    }catch(e){toast('Invalid backup file: '+e.message,'warn');}
+      // Reload cage list from imported data
+      CAGES=(()=>{try{const v=JSON.parse(ls.get('av|cagelist'));if(Array.isArray(v)&&v.length)return v;}catch{}return['Cage 1','Cage 2','Cage 3','Cage 4'];})();
+      S.activeCage=0;
+      S.activePhase=getCagePhase(0);
+      setAccent(PHASES[S.activePhase]?.accent||'#5fbf8a');
+      // Reset the file input so the same file can be re-imported if needed
+      input.value='';
+      toast('✓ Imported '+imported+' records successfully');
+      renderAll();
+    }catch(e){
+      toast('Invalid backup file: '+e.message,'warn');
+    }
   };
+  r.onerror=()=>{toast('Could not read file','warn');};
   r.readAsText(file);
 }
 
