@@ -929,6 +929,15 @@ function rTracker(){
       <div class="pt-sub" style="color:${wks>=ph.max?'var(--danger)':wks>=ph.max-1?'var(--warn)':'var(--muted)'}">
       Started ${fmtDisp(new Date(getPhaseStart(S.activeCage,S.activePhase)+'T00:00:00'))} · ${wks>=ph.max?'⚠ Transition overdue!':ph.max>=26?'growth phase':wks>=ph.max-1?`${ph.max-wks} wk left — prepare next`:`${ph.max-wks} wk remaining`}</div>`}
     </div><div class="pt-btns">${wks===null?`<button class="pt-btn" onclick="startPhase()">▶</button>`:`<button class="pt-btn" onclick="resetPhase()">↺</button>`}</div></div>`;
+    // Editable start date — lets you correct the phase start to the actual date
+    if(wks!==null){
+      h+=`<div style="display:flex;align-items:center;gap:8px;margin:-4px 0 12px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:9px">
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">📅 Adjust start date:</span>
+        <input type="date" value="${getPhaseStart(S.activeCage,S.activePhase)}" max="${fmtDate(today())}"
+          onchange="setPhaseStartDate(this.value)"
+          style="background:#161d17;border:1px solid var(--cur);border-radius:7px;color:#d4e8d6;font-size:12px;font-family:'DM Mono',monospace;padding:5px 8px;outline:none">
+      </div>`;
+    }
   }
 
   // Loading-week banner for Phase 2
@@ -2262,6 +2271,12 @@ function togChk(btn){const sl=btn.dataset.slot,dt=btn.dataset.date,cur=getChk(S.
 function togChopChk(btn){const dt=btn.dataset.date,p=parseInt(btn.dataset.phase),cur=getChk(S.activeCage,p,dt,'sf');setChk(S.activeCage,p,dt,'sf',!cur);renderAll()}
 function saveNote(date,val){setNotes(S.activeCage,date,val)}
 function startPhase(){const d=today();setPhaseStart(S.activeCage,fmtDate(d),S.activePhase);toast('▶ Phase started today');renderAll();}
+function setPhaseStartDate(dateStr){
+  if(!dateStr)return;
+  setPhaseStart(S.activeCage,dateStr,S.activePhase);
+  toast('📅 Start date updated to '+fmtDisp(new Date(dateStr+'T00:00:00')));
+  renderAll();
+}
 function resetPhase(){
   tapConfirm('resetPhase'+S.activeCage,'Tap ↺ again to reset the timer',function(){
     try{ls.del('av|cage'+S.activeCage+'|pstart|'+S.activePhase);}catch(e){}
