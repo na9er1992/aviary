@@ -668,8 +668,16 @@ const getChk=(c,p,d,sl)=>ls.get(ck(c,p,d,sl))==='1';
 const setChk=(c,p,d,sl,v)=>ls.set(ck(c,p,d,sl),v?'1':'0');
 const getCagePhase=c=>parseInt(ls.get(`av|cage${c}|phase`)||'1');
 const setCagePhase=(c,p)=>ls.set(`av|cage${c}|phase`,p);
-const getPhaseStart=c=>ls.get(`av|cage${c}|pstart`)||'';
-const setPhaseStart=(c,d)=>ls.set(`av|cage${c}|pstart`,d);
+// Phase start dates are stored PER PHASE per cage: av|cage{c}|pstart|{phase}
+// This lets each phase track its own start independently (laying started later than resting, etc).
+const getPhaseStart=(c,p)=>{
+  if(p===undefined)p=getCagePhase(c);
+  return ls.get(`av|cage${c}|pstart|${p}`)||'';
+};
+const setPhaseStart=(c,d,p)=>{
+  if(p===undefined)p=getCagePhase(c);
+  ls.set(`av|cage${c}|pstart|${p}`,d);
+};
 const getShowDate=c=>ls.get(`av|cage${c}|showdate`)||'';
 const setShowDate=(c,d)=>ls.set(`av|cage${c}|showdate`,d);
 const getEggDate=c=>ls.get(`av|cage${c}|eggdate`)||'';
@@ -702,15 +710,15 @@ function getWeekDates(off=0){
     return{name:realName,date:d,dateStr:fmtDate(d),isToday:sameDay(d,t)};
   });
 }
-function weeksInPhase(c){
-  const s=getPhaseStart(c);if(!s)return null;
+function weeksInPhase(c,p){
+  const s=getPhaseStart(c,p);if(!s)return null;
   const diff=Math.floor((today()-new Date(s+'T00:00:00'))/(7*24*3600*1000));
   return Math.max(0,diff);
 }
 // Days between a given date (yyyy-mm-dd) and the cage's phase start. null if not started.
 // 0 = the start day itself, 6 = the 7th day. Used for the 7-day loading window.
-function daysSinceStartForDate(c,dateStr){
-  const s=getPhaseStart(c);if(!s)return null;
+function daysSinceStartForDate(c,dateStr,p){
+  const s=getPhaseStart(c,p);if(!s)return null;
   const start=new Date(s+'T00:00:00'), d=new Date(dateStr+'T00:00:00');
   return Math.floor((d-start)/(24*3600*1000));
 }
@@ -722,7 +730,7 @@ function setAccent(c){if(document.documentElement)document.documentElement.style
 function renderAlerts(){
   const alerts=[];
   CAGES.forEach((_,i)=>{
-    const p=getCagePhase(i),w=weeksInPhase(i);if(w===null)return;
+    const p=getCagePhase(i);const w=weeksInPhase(i,p);if(w===null)return;
     if(p===7)return; // Young Bird is open-ended; no transition alarm
     const max=PHASES[p].max;
     const pname=p===3?'Egg Laying':p===4?'Incubation':p===5?'Chick Rearing':p===7?'Young':p===8?'Show Prep':'Phase '+p;
@@ -864,7 +872,7 @@ function renderAll(){
 }
 
 function rTracker(){
-  const ph=PHASES[S.activePhase],wks=weeksInPhase(S.activeCage),weeks=getWeekDates(S.weekOffset);
+  const ph=PHASES[S.activePhase],wks=weeksInPhase(S.activeCage,S.activePhase),weeks=getWeekDates(S.weekOffset);
   const wS=weeks[0].date,wE=weeks[6].date,isCur=S.weekOffset===0;
   // Phase 2 loading: first 7 DAYS from the phase start = Ornisol Sel E daily (applied per-day below).
   // After day 7, the normal post-loading schedule (.s2) applies. Banner reflects current status.
@@ -873,7 +881,7 @@ function rTracker(){
   if(hasLoading){
     if(wks===null) loadingStatus='notstarted';
     else {
-      const dToday=daysSinceStartForDate(S.activeCage,fmtDate(today()));
+      const dToday=daysSinceStartForDate(S.activeCage,fmtDate(today()),S.activePhase);
       loadingStatus=(dToday!==null && dToday<7)?'loading':'post';
     }
   }
@@ -919,13 +927,13 @@ function rTracker(){
     ${wks===null?`<div class="pt-weeks">Not started</div><div class="pt-sub">Tap ▶ to begin tracking</div>`
       :`<div class="pt-weeks${wks>=ph.max?' pt-danger':wks>=ph.max-1?' pt-warn':''}">Week ${wks+1}${ph.max<26?' / '+ph.max:''}</div>
       <div class="pt-sub" style="color:${wks>=ph.max?'var(--danger)':wks>=ph.max-1?'var(--warn)':'var(--muted)'}">
-      Started ${fmtDisp(new Date(getPhaseStart(S.activeCage)+'T00:00:00'))} · ${wks>=ph.max?'⚠ Transition overdue!':ph.max>=26?'growth phase':wks>=ph.max-1?`${ph.max-wks} wk left — prepare next`:`${ph.max-wks} wk remaining`}</div>`}
+      Started ${fmtDisp(new Date(getPhaseStart(S.activeCage,S.activePhase)+'T00:00:00'))} · ${wks>=ph.max?'⚠ Transition overdue!':ph.max>=26?'growth phase':wks>=ph.max-1?`${ph.max-wks} wk left — prepare next`:`${ph.max-wks} wk remaining`}</div>`}
     </div><div class="pt-btns">${wks===null?`<button class="pt-btn" onclick="startPhase()">▶</button>`:`<button class="pt-btn" onclick="resetPhase()">↺</button>`}</div></div>`;
   }
 
   // Loading-week banner for Phase 2
   if(hasLoading){
-    const dToday=wks!==null?daysSinceStartForDate(S.activeCage,fmtDate(today())):null;
+    const dToday=wks!==null?daysSinceStartForDate(S.activeCage,fmtDate(today()),S.activePhase):null;
     if(loadingStatus==='loading'){
       const left=7-(dToday||0);
       h+=`<div class="alert warn" style="margin:0 0 12px">⚡ LOADING — Ornisol Sel E daily · day ${(dToday||0)+1} of 7 (${left} day${left===1?'':'s'} left)</div>`;
@@ -1010,7 +1018,7 @@ function rTracker(){
     // this specific day's position relative to the phase start — not today's position.
     let dayBaseSched = baseSched; // default fallback
     if(hasLoading && ph.s2){
-      const dd=daysSinceStartForDate(S.activeCage,dateStr);
+      const dd=daysSinceStartForDate(S.activeCage,dateStr,S.activePhase);
       if(dd!==null && dd>=7){
         dayBaseSched = ph.s2; // this day is past loading — use post-loading schedule
       } else {
@@ -1020,7 +1028,7 @@ function rTracker(){
     let sc=dayBaseSched[name];
     // Per-day loading override: if this date is within the first 7 days of the phase, force Ornisol.
     if(hasLoading){
-      const dd=daysSinceStartForDate(S.activeCage,dateStr);
+      const dd=daysSinceStartForDate(S.activeCage,dateStr,S.activePhase);
       if(dd!==null && dd>=0 && dd<7){
         sc={...sc, wt:'Ornisol Sel E: Vit E + Selenium (loading day '+(dd+1)+'/7). Flush at 12hr'};
       }
@@ -1070,7 +1078,7 @@ function tRow(slot,label,text,checked,dateStr,isFuture){
 // ── BIRDS TAB ─────────────────────────────────────────────────────────────────
 function rBirds(){
   const birds=ls.getJ(`av|birds|c${S.activeCage}`,[]);
-  const p=getCagePhase(S.activeCage),wks=weeksInPhase(S.activeCage)||0;
+  const p=getCagePhase(S.activeCage);const wks=weeksInPhase(S.activeCage,p)||0;
   const readyPct=p===2?Math.min(100,Math.round((wks/3)*100)):p===1?Math.min(70,Math.round((wks/4)*70)):p===4||p===5?0:40;
   // Total birds across all cages
   const totalAllCages=CAGES.reduce((acc,_,i)=>acc+ls.getJ(`av|birds|c${i}`,[]).length,0);
@@ -1448,7 +1456,7 @@ function rHealth(){
   const p=getCagePhase(S.activeCage);
   const records=ls.getJ(`av|health|c${S.activeCage}`,[]);
   const weights=ls.getJ(`av|chick_wt|c${S.activeCage}`,[]);
-  const rearStart=p===5?getPhaseStart(S.activeCage):'';
+  const rearStart=p===5?getPhaseStart(S.activeCage,5):'';
   const daysIn=rearStart?Math.round((today()-new Date(rearStart+'T00:00:00'))/(864e5)):0;
   let h=`<div class="sec-title">HEALTH LOG — ${CAGES[S.activeCage].toUpperCase()}</div>`;
   // Log form
@@ -1654,6 +1662,10 @@ function importAllData(input){
       if(!data['av|phase_migrated_egglaying']){
         ls.del('av|phase_migrated_egglaying');
         migratePhasesForEggLaying();
+      }
+      if(!data['av|phase_perphase_migrated']){
+        ls.del('av|phase_perphase_migrated');
+        migratePerPhaseStarts();
       }
       S.activeCage=0;
       S.activePhase=getCagePhase(0);
@@ -2249,21 +2261,21 @@ function chgWeek(d){if(S.weekOffset+d>4)return;if(S.weekOffset+d<-52)return;S.we
 function togChk(btn){const sl=btn.dataset.slot,dt=btn.dataset.date,cur=getChk(S.activeCage,S.activePhase,dt,sl);setChk(S.activeCage,S.activePhase,dt,sl,!cur);renderAll()}
 function togChopChk(btn){const dt=btn.dataset.date,p=parseInt(btn.dataset.phase),cur=getChk(S.activeCage,p,dt,'sf');setChk(S.activeCage,p,dt,'sf',!cur);renderAll()}
 function saveNote(date,val){setNotes(S.activeCage,date,val)}
-function startPhase(){const d=today();setPhaseStart(S.activeCage,fmtDate(d));toast('▶ Phase started today');renderAll();}
+function startPhase(){const d=today();setPhaseStart(S.activeCage,fmtDate(d),S.activePhase);toast('▶ Phase started today');renderAll();}
 function resetPhase(){
   tapConfirm('resetPhase'+S.activeCage,'Tap ↺ again to reset the timer',function(){
-    try{ls.del('av|cage'+S.activeCage+'|pstart');}catch(e){}
+    try{ls.del('av|cage'+S.activeCage+'|pstart|'+S.activePhase);}catch(e){}
     toast('↺ Timer reset');
     renderAll();
   });
 }
 function setShow(d){setShowDate(S.activeCage,d);renderAll();}
 function eggLaid(){
-  // Direct: records egg date, switches cage + screen to Incubation immediately
+  // Direct: records egg date, switches cage + screen to Egg Laying immediately
   const todayStr=fmtDate(today());
   setEggDate(S.activeCage,todayStr);
   setCagePhase(S.activeCage,3);
-  setPhaseStart(S.activeCage,todayStr);
+  setPhaseStart(S.activeCage,todayStr,3);
   S.activePhase=3;
   setAccent(PHASES[3].accent);
   toast('🥚 First egg! Switched to Egg Laying phase');
@@ -2273,7 +2285,7 @@ function chicksHatched(){
   // Direct: switches cage + screen to Chick Rearing immediately
   const todayStr=fmtDate(today());
   setCagePhase(S.activeCage,5);
-  setPhaseStart(S.activeCage,todayStr);
+  setPhaseStart(S.activeCage,todayStr,5);
   S.activePhase=5;
   setAccent(PHASES[5].accent);
   toast('🐣 Switched to Chick Rearing — Day 1');
@@ -2284,7 +2296,7 @@ function startIncubation(){
   // Keep the existing egg date (incubation countdown runs from first egg).
   const todayStr=fmtDate(today());
   setCagePhase(S.activeCage,4);
-  setPhaseStart(S.activeCage,todayStr);
+  setPhaseStart(S.activeCage,todayStr,4);
   S.activePhase=4;
   setAccent(PHASES[4].accent);
   toast('🪺 Switched to Incubation — hen sitting');
@@ -2493,6 +2505,37 @@ function migratePhasesForEggLaying(){
   }catch(e){console.warn('Phase migration skipped:',e.message);}
 }
 migratePhasesForEggLaying();
+
+// ── ONE-TIME MIGRATION: per-phase start dates ──
+// Before this version, each cage had ONE shared start date (av|cage{c}|pstart) used for
+// every phase. Now each phase tracks its own start (av|cage{c}|pstart|{phase}).
+// Migrate by copying the old shared date into the cage's CURRENT phase slot, so the
+// active phase keeps its timer and other phases correctly show "not started".
+function migratePerPhaseStarts(){
+  try{
+    if(ls.get('av|phase_perphase_migrated')==='1')return;
+    const keys=[];
+    for(let i=0;i<ls.length;i++){const k=ls.key(i);if(k)keys.push(k);}
+    keys.forEach(k=>{
+      const m=k.match(/^av\|cage(\d+)\|pstart$/); // old shared-date key
+      if(m){
+        const c=m[1];
+        const oldDate=ls.get(k);
+        const curPhase=parseInt(ls.get(`av|cage${c}|phase`)||'1');
+        if(oldDate){
+          // Only set if the new per-phase key isn't already populated
+          if(!ls.get(`av|cage${c}|pstart|${curPhase}`)){
+            ls.set(`av|cage${c}|pstart|${curPhase}`,oldDate);
+          }
+        }
+        // Remove the old shared key so it can't cause confusion
+        ls.del(k);
+      }
+    });
+    ls.set('av|phase_perphase_migrated','1');
+  }catch(e){console.warn('Per-phase start migration skipped:',e.message);}
+}
+migratePerPhaseStarts();
 
 try{
   S.activePhase=getCagePhase(0);
