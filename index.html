@@ -305,10 +305,15 @@ select.finp option{background:#111}
 @media (orientation:landscape) and (min-width:600px){
   .app-shell{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
   .app-header{flex-shrink:0;}
+  /* Compact header in landscape — smaller title, tighter spacing */
+  .app-header .hdr{padding:8px 16px 6px;}
+  .app-header .hdr-eye{font-size:8px;margin-bottom:1px;}
+  .app-header .hdr-title{font-size:20px;margin-bottom:4px;}
+  .app-header .date-disp{font-size:10px;margin-bottom:6px;}
   .app-body{flex:1;display:flex;flex-direction:row;overflow:hidden;min-height:0;}
   .app-sidebar{
     display:flex;flex-direction:column;
-    width:190px;flex-shrink:0;
+    width:170px;flex-shrink:0;
     background:var(--surface);
     border-right:1px solid var(--border);
     overflow-y:auto;
@@ -318,20 +323,21 @@ select.finp option{background:#111}
     flex:1;overflow-y:auto;
     -webkit-overflow-scrolling:touch;
     height:100%;
+    min-width:0;
   }
 
   .tabs{
     display:flex;flex-direction:column;
     border-bottom:none;border-right:none;
-    padding:6px 0;overflow-x:visible;
+    padding:4px 0;overflow-x:visible;
     overflow-y:visible;flex:1;
   }
   .tbtn{
     display:block;width:100%;
-    padding:10px 16px;margin-right:0;
+    padding:9px 14px;margin-right:0;
     background:none;border:none;
     border-bottom:none;
-    border-left:2px solid transparent;
+    border-left:3px solid transparent;
     color:var(--muted);font-size:11px;
     font-family:'DM Mono',monospace;
     cursor:pointer;transition:all .15s;
@@ -341,13 +347,12 @@ select.finp option{background:#111}
     border-left-color:var(--cur);
     border-bottom-color:transparent;
     color:var(--cur);
-    background:color-mix(in srgb,var(--cur) 8%,transparent);
+    background:color-mix(in srgb,var(--cur) 10%,transparent);
   }
-  .tbtn:hover{background:color-mix(in srgb,var(--cur) 5%,transparent);}
 
   .bottom-nav{
     position:relative;bottom:auto;left:auto;right:auto;
-    width:190px;height:auto;
+    width:170px;height:auto;
     flex-direction:column;
     border-top:1px solid var(--border);
     border-right:none;
@@ -357,29 +362,34 @@ select.finp option{background:#111}
   .bnav-btn{
     display:flex;flex-direction:row;
     justify-content:flex-start;align-items:center;
-    gap:8px;padding:11px 16px;
+    gap:8px;padding:11px 14px;
     border-top:none;
-    border-left:2px solid transparent;
+    border-left:3px solid transparent;
     font-size:11px;flex:none;
   }
   .bnav-btn.active{
     border-left-color:var(--cur);
     border-top-color:transparent;
     color:var(--cur);
-    background:color-mix(in srgb,var(--cur) 8%,transparent);
+    background:color-mix(in srgb,var(--cur) 10%,transparent);
   }
   .bnav-icon{font-size:15px;line-height:1;}
 
-  .content{padding:14px 20px 20px;} /* no bottom nav offset needed */
-  .stat-grid{grid-template-columns:1fr 1fr 1fr 1fr;}
-  .modal-bx{max-width:480px;}
+  /* Content fills the available width, with comfortable reading max */
+  .content{padding:16px 24px 24px;max-width:780px;margin:0 auto;width:100%;}
+  .stat-grid{grid-template-columns:repeat(4,1fr);}
+  .modal-bx{max-width:520px;}
+
+  /* Cage pills horizontal scroll stays in header — make them compact */
+  .cage-row{gap:5px;}
+  .cpill{padding:5px 12px;font-size:12px;}
 }
 
-/* Large landscape tablet 10"+ */
+/* Large landscape tablet 10"+ — use even more width */
 @media (orientation:landscape) and (min-width:900px){
-  .app-sidebar,.bottom-nav{width:210px;}
-  .content{padding:16px 28px 20px;}
-  .stat-grid{grid-template-columns:1fr 1fr 1fr 1fr;}
+  .app-sidebar,.bottom-nav{width:190px;}
+  .content{max-width:900px;padding:18px 32px 24px;}
+  .stat-grid{grid-template-columns:repeat(4,1fr);}
 }
 </style>
 </head>
