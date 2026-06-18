@@ -336,24 +336,22 @@ select.finp option{background:#111}
   .content{padding:20px 44px 28px;}
   .stat-grid{grid-template-columns:repeat(4,1fr);}
 }
-/* ── Tracker two-column layout (week view + info/reminders side panel) ── */
-.tracker-cols{display:block;} /* portrait default: stacked */
-.tracker-side{margin-top:4px;}
+/* ── Tracker two-column layout (week view + info/reminders side panel) ──
+   Uses WIDTH only (not orientation) for reliability across tablets.
+   A 10" tablet is ~1280px landscape / ~800px portrait. iPad ~1024/768.
+   At ≥900px wide we have room for two columns side by side. */
+.tracker-cols{display:flex;flex-direction:column;gap:0;}
 .tracker-week{min-width:0;}
+.tracker-side{order:-1;margin:0 0 12px;} /* narrow screens: info/reminders on top */
 
-@media (orientation:portrait),(max-width:767px){
-  /* Portrait: side panel (info+reminders) shows ABOVE the week so reminders are seen first */
-  .tracker-cols{display:flex;flex-direction:column;}
-  .tracker-side{order:-1;margin-top:0;margin-bottom:8px;}
+@media (min-width:900px){
+  /* Wide enough for side-by-side: week view + right panel */
+  .tracker-cols{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;align-items:start;}
+  .tracker-side{order:0;margin:0;position:sticky;top:8px;}
 }
-
-@media (orientation:landscape) and (min-width:600px){
-  /* Landscape: week view on the left, info+reminders as a right column */
-  .tracker-cols{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;}
-  .tracker-side{margin-top:0;position:sticky;top:0;}
-}
-@media (orientation:landscape) and (min-width:1000px){
-  .tracker-cols{grid-template-columns:1fr 340px;gap:24px;}
+@media (min-width:1200px){
+  /* Large tablet landscape — more gap, slightly wider panel */
+  .tracker-cols{grid-template-columns:minmax(0,1fr) 360px;gap:36px;}
 }
 </style>
 </head>
@@ -434,7 +432,7 @@ const PHASES={
        Wed:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + ½ tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Ornisol Sel E: Second weekly E/Se dose. Flush at 12hr'},
        Thu:{sf:'No softfood — Hormone balancing',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only — Belvimin + cuttlebone supply pre-lay calcium (free-choice)'},
        Fri:{sf:'No softfood — Pre-clutch system clear',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — Pre-weekend kidney flush'}}},
-  3:{name:'Egg Laying',icon:'🥚',dur:'~1–2 Weeks (clutch)',max:3,light:'14 hrs',accent:'#d98ae0',
+  3:{name:'Egg Laying',icon:'🥚',dur:'~1–2 Weeks (clutch)',max:2,light:'14 hrs',accent:'#d98ae0',
     s:{Sat:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Breedmax + ½ tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Liquid Calcium + D3: Active laying — guaranteed calcium delivery. Flush at 12hr'},
        Sun:{sf:'No softfood — Hen resting between eggs',sd:'3 tbsp Platform A + 1x Whole White Millet Cluster',wt:'Pure Water Only — Belvimin + cuttlebone always available'},
        Mon:{sf:'1 Heaping tbsp Platform C Mash + ½ tsp Sprouted Mung',sd:'3 Level tbsp Platform A',wt:'Pure Water Only — free-choice calcium covers between liquid doses'},
