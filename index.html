@@ -337,21 +337,21 @@ select.finp option{background:#111}
   .stat-grid{grid-template-columns:repeat(4,1fr);}
 }
 /* ── Tracker two-column layout (week view + info/reminders side panel) ──
-   Uses WIDTH only (not orientation) for reliability across tablets.
-   A 10" tablet is ~1280px landscape / ~800px portrait. iPad ~1024/768.
-   At ≥900px wide we have room for two columns side by side. */
-.tracker-cols{display:flex;flex-direction:column;gap:0;}
-.tracker-week{min-width:0;}
-.tracker-side{order:-1;margin:0 0 12px;} /* narrow screens: info/reminders on top */
+   Flexbox with explicit basis — reliable inside nested flex on mobile Chrome.
+   Threshold 820px catches even lower-DPI 10" tablets in landscape, while
+   portrait tablets (~800px or less) stay stacked. */
+.tracker-cols{display:flex;flex-direction:column;width:100%;}
+.tracker-week{min-width:0;width:100%;}
+.tracker-side{order:-1;margin:0 0 12px;width:100%;}
 
-@media (min-width:900px){
-  /* Wide enough for side-by-side: week view + right panel */
-  .tracker-cols{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;align-items:start;}
-  .tracker-side{order:0;margin:0;position:sticky;top:8px;}
+@media (min-width:820px){
+  .tracker-cols{flex-direction:row;align-items:flex-start;gap:24px;}
+  .tracker-week{flex:1 1 0;min-width:0;width:auto;}
+  .tracker-side{order:0;flex:0 0 300px;width:300px;margin:0;position:sticky;top:8px;}
 }
-@media (min-width:1200px){
-  /* Large tablet landscape — more gap, slightly wider panel */
-  .tracker-cols{grid-template-columns:minmax(0,1fr) 360px;gap:36px;}
+@media (min-width:1100px){
+  .tracker-cols{gap:32px;}
+  .tracker-side{flex:0 0 340px;width:340px;}
 }
 </style>
 </head>
@@ -865,11 +865,72 @@ function renderAll(){
       try{el('mainContent').innerHTML=(maps[S.activeTab]||rTracker)();}
       catch(tabErr){el('mainContent').innerHTML=`<div style="padding:20px;font-family:'DM Mono',monospace;font-size:12px;color:var(--danger)">Tab render error: ${tabErr.message}</div>`;}
     }
+    // Apply tracker two-column layout based on ACTUAL measured width (bypasses
+    // CSS media-query quirks on tablets). Runs after content is in the DOM.
+    requestAnimationFrame(applyTrackerColumns);
   }catch(e){
     console.error('renderAll crash:',e.message,e.stack);
     toast('⚠ Render error: '+e.message.substring(0,60),'warn');
   }
 }
+
+// Measures the real available width of the content area and lays out the
+// tracker's two columns (week view + side panel) side by side if there's room.
+// This is more reliable than CSS @media on tablets with odd device-pixel ratios.
+function applyTrackerColumns(){
+  try{
+    const cols=document.querySelector('.tracker-cols');
+    if(!cols)return;
+    const week=cols.querySelector('.tracker-week');
+    const side=cols.querySelector('.tracker-side');
+    if(!week||!side)return;
+    // Measure the real available width of the columns container
+    let avail=cols.clientWidth||cols.getBoundingClientRect().width||0;
+    // Fallback: if measurement failed (0), use the main content area or window
+    if(!avail){
+      const mc=document.getElementById('mainContent');
+      avail=(mc&&mc.clientWidth)||window.innerWidth||0;
+    }
+    // Threshold 560px: even a narrowed content area in landscape clears this,
+    // while portrait phones/tablets (~600px content or less) may stack.
+    // Side panel sized to fit: scales down on tighter screens.
+    let SIDE_W, GAP;
+    if(avail>=1000){SIDE_W=340;GAP=32;}
+    else if(avail>=760){SIDE_W=300;GAP=22;}
+    else {SIDE_W=260;GAP=16;}
+    if(avail>=560){
+      // Side by side
+      cols.style.display='flex';
+      cols.style.flexDirection='row';
+      cols.style.alignItems='flex-start';
+      cols.style.gap=GAP+'px';
+      week.style.flex='1 1 0';
+      week.style.minWidth='0';
+      week.style.width='auto';
+      week.style.order='0';
+      side.style.flex='0 0 '+SIDE_W+'px';
+      side.style.width=SIDE_W+'px';
+      side.style.order='0';
+      side.style.margin='0';
+      side.style.position='sticky';
+      side.style.top='8px';
+    } else {
+      // Stacked — side panel (info+reminders) on top
+      cols.style.display='flex';
+      cols.style.flexDirection='column';
+      cols.style.gap='0';
+      week.style.flex='';week.style.width='100%';week.style.order='0';
+      side.style.flex='';side.style.width='100%';side.style.order='-1';
+      side.style.margin='0 0 12px';side.style.position='static';
+    }
+    const dbg=document.getElementById('widthDebug');
+    if(dbg)dbg.textContent='layout width: '+Math.round(avail)+'px · '+(avail>=560?'2 columns':'stacked');
+  }catch(e){/* layout is best-effort */}
+}
+// Re-apply on rotate/resize, with a couple of delayed retries so it catches
+// the final layout after the browser settles (some tablets report width late).
+window.addEventListener('resize',()=>{try{applyTrackerColumns();}catch(e){}});
+window.addEventListener('orientationchange',()=>{[150,400,800].forEach(ms=>setTimeout(()=>{try{applyTrackerColumns();}catch(e){}},ms));});
 
 function rTracker(){
   const ph=PHASES[S.activePhase],wks=weeksInPhase(S.activeCage,S.activePhase),weeks=getWeekDates(S.weekOffset);
@@ -1123,8 +1184,10 @@ function rTracker(){
   // Side panel = phase info/settings first, then reminders, then action cards
   const sideCol=`<div style="margin-bottom:14px">
     <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin:0 0 10px">ℹ️ PHASE INFO & SETTINGS</div>${ref}</div>${remHtml}${act}`;
-  // Wrap into the two-column grid
-  h+=`<div class="tracker-cols"><div class="tracker-week">${weekCol}</div><div class="tracker-side">${sideCol}</div></div>`;
+  // Wrap into the two-column container. A tiny width readout helps confirm layout
+  // on your device — it shows the measured content width (remove later if you like).
+  h+=`<div class="tracker-cols" id="trackerCols"><div class="tracker-week">${weekCol}</div><div class="tracker-side">${sideCol}</div></div>
+  <div id="widthDebug" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-align:right;margin-top:6px;opacity:.6"></div>`;
   return h;
 }
 
