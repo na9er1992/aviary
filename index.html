@@ -214,151 +214,146 @@ select.finp option{background:#111}
 
 
 /* ═══════════════════════════════════════════════════
-   RESPONSIVE LAYOUT — PORTRAIT & LANDSCAPE
-   All responsive rules in one place, no conflicts.
+   RESPONSIVE LAYOUT — SIDEBAR IN BOTH ORIENTATIONS
+   Left sidebar holds the vertical tab list + All Birds.
+   Main content sits to the right and fills the width.
    ═══════════════════════════════════════════════════ */
 
-/* ── Base layout structures (no orientation assumption) ── */
-.app-shell{display:flex;flex-direction:column;min-height:100vh;}
+/* ── Base: flex column shell, body splits into sidebar + main ── */
+.app-shell{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
 .app-header{flex-shrink:0;}
-.app-body{flex:1;display:flex;flex-direction:column;}
-.app-sidebar{display:contents;} /* portrait: sidebar is transparent, children flow normally */
-.app-main{flex:1;}
+.app-body{flex:1;display:flex;flex-direction:row;overflow:hidden;min-height:0;}
+.app-sidebar{
+  display:flex;flex-direction:column;
+  flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  overflow-y:auto;
+  height:100%;
+}
+.app-main{
+  flex:1;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  height:100%;
+  min-width:0;
+}
+
+/* ── Vertical tab list (shared by both orientations) ── */
+.tabs{
+  display:flex;flex-direction:column;
+  border-bottom:none;border-right:none;
+  padding:6px 0;overflow-y:visible;overflow-x:visible;
+  flex:1;
+}
+.tbtn{
+  display:block;width:100%;
+  padding:12px 16px;margin-right:0;
+  background:none;border:none;
+  border-bottom:none;
+  border-left:3px solid transparent;
+  color:var(--muted);
+  font-family:'DM Mono',monospace;
+  cursor:pointer;transition:all .15s;
+  white-space:nowrap;text-align:left;
+}
+.tbtn.active{
+  border-left-color:var(--cur);
+  border-bottom-color:transparent;
+  color:var(--cur);
+  background:color-mix(in srgb,var(--cur) 10%,transparent);
+}
+
+/* ── All Birds nav lives at bottom of the sidebar ── */
+.bottom-nav{
+  position:relative;bottom:auto;left:auto;right:auto;
+  width:100%;height:auto;
+  flex-direction:column;
+  background:var(--surface);
+  border-top:1px solid var(--border);border-right:none;
+  display:flex;align-items:stretch;
+  padding-bottom:0;flex-shrink:0;
+}
+.bnav-btn{
+  display:flex;flex-direction:row;
+  justify-content:flex-start;align-items:center;
+  gap:8px;background:none;border:none;
+  border-top:none;
+  border-left:3px solid transparent;
+  color:var(--muted);font-family:'DM Mono',monospace;
+  cursor:pointer;transition:color .15s;
+  padding:13px 16px;flex:none;
+}
+.bnav-btn.active{
+  color:var(--cur);
+  border-left-color:var(--cur);border-top-color:transparent;
+  background:color-mix(in srgb,var(--cur) 10%,transparent);
+}
+.bnav-icon{line-height:1;}
 
 /* ══════════════════════════════════
-   PORTRAIT MODE (default / narrow)
-   Tabs scroll horizontally at top.
-   Bottom nav fixed at bottom.
+   PORTRAIT (narrow / phone)
+   Slimmer sidebar, smaller text.
    ══════════════════════════════════ */
 @media (orientation:portrait),(max-width:767px){
-  .app-shell{display:block;}
-  .app-body{display:block;}
-  .app-sidebar{display:contents;}
-  .app-main{display:block;}
-
-  .tabs{
-    display:flex;flex-direction:row;
-    border-bottom:1px solid var(--border);
-    padding:0 18px;
-    overflow-x:auto;
-    scrollbar-width:none;
-  }
-  .tabs::-webkit-scrollbar{display:none;}
-  .tbtn{
-    padding:10px 0;margin-right:16px;
-    background:none;border:none;
-    border-bottom:2px solid transparent;
-    border-left:none;
-    color:var(--muted);font-size:11px;
-    font-family:'DM Mono',monospace;
-    cursor:pointer;transition:all .15s;
-    white-space:nowrap;flex-shrink:0;
-    text-align:left;
-  }
-  .tbtn.active{
-    border-bottom-color:var(--cur);
-    color:var(--cur);
-    border-left-color:transparent;
-    background:none;
-  }
-
-  .bottom-nav{
-    position:fixed;bottom:0;left:0;right:0;
-    height:58px;
-    background:var(--surface);
-    border-top:1px solid var(--border);
-    border-right:none;
-    display:flex;flex-direction:row;
-    align-items:stretch;
-    z-index:1000;
-    width:auto;
-    padding-bottom:env(safe-area-inset-bottom,0px);
-  }
-  .bnav-btn{
-    flex:1;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    gap:2px;background:none;border:none;
-    border-top:2px solid transparent;
-    border-left:none;
-    color:var(--muted);font-family:'DM Mono',monospace;
-    font-size:9px;cursor:pointer;transition:color .15s;
-    padding:6px 4px;
-  }
-  .bnav-btn.active{color:var(--cur);border-top-color:var(--cur);background:none;border-left-color:transparent;}
-  .bnav-icon{font-size:18px;line-height:1;}
-
-  .content{padding:14px 18px 74px;} /* 74px = bottom nav + safe area */
+  .app-sidebar{width:128px;}
+  .tbtn{font-size:11px;padding:11px 12px;}
+  .bnav-btn{font-size:11px;padding:12px;}
+  .bnav-icon{font-size:15px;}
+  .content{padding:14px 16px 20px;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  .modal-bx{max-width:92vw;}
 }
 
-/* Portrait tablet wider content */
+/* Portrait tablet — a bit wider */
 @media (orientation:portrait) and (min-width:600px){
-  .content{padding:16px 24px 74px;}
-  .modal-bx{max-width:460px;}
+  .app-sidebar{width:170px;}
+  .tbtn{font-size:13px;padding:13px 18px;}
+  .bnav-btn{font-size:13px;}
+  .bnav-icon{font-size:17px;}
+  .content{padding:18px 28px 24px;}
   .stat-grid{grid-template-columns:1fr 1fr 1fr;}
+  .modal-bx{max-width:480px;}
 }
 
 /* ══════════════════════════════════
-   LANDSCAPE MODE (wide screen)
-   Sidebar on left with vertical tabs.
-   Main content scrolls on right.
+   LANDSCAPE (wide)
+   Wider sidebar + wider content.
    ══════════════════════════════════ */
 @media (orientation:landscape) and (min-width:600px){
-  /* Landscape uses the SAME layout as portrait: top tab row, full-width content,
-     bottom nav. Just wider, using the full screen — no sidebar, no wasted space. */
-  .app-shell{display:block;height:auto;overflow:visible;}
-  .app-body{display:block;}
-  .app-sidebar{display:contents;}
-  .app-main{display:block;overflow:visible;}
-
-  .tabs{
-    display:flex;flex-direction:row;
-    border-bottom:1px solid var(--border);border-right:none;
-    padding:0 24px;overflow-x:auto;scrollbar-width:none;
-  }
-  .tabs::-webkit-scrollbar{display:none;}
-  .tbtn{
-    padding:11px 0;margin-right:20px;
-    background:none;border:none;
-    border-bottom:2px solid transparent;border-left:none;
-    color:var(--muted);font-size:12px;
-    font-family:'DM Mono',monospace;
-    cursor:pointer;transition:all .15s;
-    white-space:nowrap;flex-shrink:0;text-align:left;
-  }
-  .tbtn.active{border-bottom-color:var(--cur);border-left-color:transparent;color:var(--cur);background:none;}
-
-  .bottom-nav{
-    position:fixed;bottom:0;left:0;right:0;
-    height:54px;width:auto;
-    background:var(--surface);
-    border-top:1px solid var(--border);border-right:none;
-    display:flex;flex-direction:row;align-items:stretch;
-    z-index:1000;padding-bottom:env(safe-area-inset-bottom,0px);
-  }
-  .bnav-btn{
-    flex:1;display:flex;flex-direction:row;
-    align-items:center;justify-content:center;gap:8px;
-    background:none;border:none;
-    border-top:2px solid transparent;border-left:none;
-    color:var(--muted);font-family:'DM Mono',monospace;
-    font-size:12px;cursor:pointer;padding:6px 4px;
-  }
-  .bnav-btn.active{color:var(--cur);border-top-color:var(--cur);border-left-color:transparent;background:none;}
-  .bnav-icon{font-size:16px;line-height:1;}
-
-  /* Full-width content — no narrow centered column */
-  .content{padding:16px 24px 70px;max-width:none;margin:0;width:auto;}
-
-  /* Use the extra width: wider grids where it helps */
+  .app-sidebar{width:200px;}
+  .tbtn{font-size:13px;padding:13px 20px;}
+  .bnav-btn{font-size:13px;padding:14px 20px;}
+  .bnav-icon{font-size:17px;}
+  .content{padding:18px 32px 28px;max-width:none;margin:0;width:auto;}
   .stat-grid{grid-template-columns:repeat(4,1fr);}
   .egg-grid-hdr,.egg-row{grid-template-columns:28px 1fr 130px 90px 36px;}
-  .modal-bx{max-width:540px;}
+  .modal-bx{max-width:560px;}
 }
 
-/* Large landscape tablet 10"+ — two-column grids to fill width */
+/* Large landscape tablet 10"+ — even wider sidebar & content */
 @media (orientation:landscape) and (min-width:1000px){
-  .content{padding:18px 36px 70px;}
+  .app-sidebar{width:220px;}
+  .content{padding:20px 44px 28px;}
   .stat-grid{grid-template-columns:repeat(4,1fr);}
+}
+/* ── Tracker two-column layout (week view + info/reminders side panel) ── */
+.tracker-cols{display:block;} /* portrait default: stacked */
+.tracker-side{margin-top:4px;}
+.tracker-week{min-width:0;}
+
+@media (orientation:portrait),(max-width:767px){
+  /* Portrait: side panel (info+reminders) shows ABOVE the week so reminders are seen first */
+  .tracker-cols{display:flex;flex-direction:column;}
+  .tracker-side{order:-1;margin-top:0;margin-bottom:8px;}
+}
+
+@media (orientation:landscape) and (min-width:600px){
+  /* Landscape: week view on the left, info+reminders as a right column */
+  .tracker-cols{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;}
+  .tracker-side{margin-top:0;position:sticky;top:0;}
+}
+@media (orientation:landscape) and (min-width:1000px){
+  .tracker-cols{grid-template-columns:1fr 340px;gap:24px;}
 }
 </style>
 </head>
@@ -902,16 +897,18 @@ function rTracker(){
   const dShow = isShow ? daysToShow(S.activeCage) : null;
   const showWeek = (dShow!==null && dShow>=0 && dShow<7); // final 7 days = real show week
 
-  let h=`<div class="phase-row">${[1,2,3,4,5,6,7,8].map(p=>`<button class="pbtn${S.activePhase===p?' active':''}" onclick="selPhase(${p})">${PHASES[p].icon} ${p===3?'Lay':p===4?'Incub':p===5?'Rear':p===7?'Young':p===8?'Show':'P'+p}</button>`).join('')}</div>
-  <div class="phase-card"><div class="pc-top"><span class="pc-icon">${ph.icon}</span><div><div class="pc-label">PHASE ${S.activePhase}</div><div class="pc-name">${ph.name}</div></div></div>
+  let h=`<div class="phase-row">${[1,2,3,4,5,6,7,8].map(p=>`<button class="pbtn${S.activePhase===p?' active':''}" onclick="selPhase(${p})">${PHASES[p].icon} ${p===3?'Lay':p===4?'Incub':p===5?'Rear':p===7?'Young':p===8?'Show':'P'+p}</button>`).join('')}</div>`;
+
+  // ── REFERENCE BLOCK (phase card + free-choice banner + timer + date editor) ──
+  // Built here but rendered at the BOTTOM, so daily tasks appear first.
+  let ref=`<div class="phase-card"><div class="pc-top"><span class="pc-icon">${ph.icon}</span><div><div class="pc-label">PHASE ${S.activePhase}</div><div class="pc-name">${ph.name}</div></div></div>
   <div class="pc-meta"><span>⏱ ${ph.dur}</span><span>☀️ ${ph.light}</span></div></div>`;
-  // Always-available free-choice reminder
-  h+=`<div style="display:flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--cur) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--cur) 20%,transparent);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--cur)">
+  ref+=`<div style="display:flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--cur) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--cur) 20%,transparent);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--cur)">
   <span style="font-size:14px">♾️</span><span>Always in cage: Belvimin (Ca+D3+vitamins) + cuttlebone — free choice</span></div>`;
 
   if(isShow){
     // Show-date picker + countdown
-    h+=`<div class="phase-timer"><div style="flex:1"><div class="pt-label">SHOW COUNTDOWN — ${CAGES[S.activeCage].toUpperCase()}</div>
+    ref+=`<div class="phase-timer"><div style="flex:1"><div class="pt-label">SHOW COUNTDOWN — ${CAGES[S.activeCage].toUpperCase()}</div>
     ${dShow===null
       ?`<div class="pt-weeks">No show date set</div><div class="pt-sub">Pick your competition date →</div>`
       :dShow>0
@@ -921,24 +918,15 @@ function rTracker(){
           ?`<div class="pt-weeks pt-warn">🏆 SHOW DAY!</div><div class="pt-sub" style="color:var(--warn)">Good luck — pack cage, seed & water</div>`
           :`<div class="pt-weeks">Show passed</div><div class="pt-sub">Set a new date for the next show</div>`}
     </div><div class="pt-btns"><input type="date" class="time-input" style="width:auto;font-size:12px;padding:6px 8px" value="${getShowDate(S.activeCage)}" onchange="setShow(this.value)"></div></div>`;
-
-    if(dShow!==null && dShow>=0){
-      if(showWeek){
-        h+=`<div class="alert warn" style="margin:0 0 12px">🏆 SHOW WEEK — ease conditioning, keep gut clean, settle feather. Friday = travel prep.</div>`;
-      } else {
-        h+=`<div class="alert" style="margin:0 0 12px;background:color-mix(in srgb,var(--cur) 12%,transparent);border:1px solid color-mix(in srgb,var(--cur) 30%,transparent);color:var(--cur)">✓ CONDITIONING — build feather sheen & show-cage calmness. Show week prep begins at 7 days out.</div>`;
-      }
-    }
   } else {
-    h+=`<div class="phase-timer"><div style="flex:1"><div class="pt-label">PHASE ${S.activePhase} TIMER — ${CAGES[S.activeCage].toUpperCase()}</div>
+    ref+=`<div class="phase-timer"><div style="flex:1"><div class="pt-label">PHASE ${S.activePhase} TIMER — ${CAGES[S.activeCage].toUpperCase()}</div>
     ${wks===null?`<div class="pt-weeks">Not started</div><div class="pt-sub">Tap ▶ to begin tracking</div>`
       :`<div class="pt-weeks${wks>=ph.max?' pt-danger':wks>=ph.max-1?' pt-warn':''}">Week ${wks+1}${ph.max<26?' / '+ph.max:''}</div>
       <div class="pt-sub" style="color:${wks>=ph.max?'var(--danger)':wks>=ph.max-1?'var(--warn)':'var(--muted)'}">
       Started ${fmtDisp(new Date(getPhaseStart(S.activeCage,S.activePhase)+'T00:00:00'))} · ${wks>=ph.max?'⚠ Transition overdue!':ph.max>=26?'growth phase':wks>=ph.max-1?`${ph.max-wks} wk left — prepare next`:`${ph.max-wks} wk remaining`}</div>`}
     </div><div class="pt-btns">${wks===null?`<button class="pt-btn" onclick="startPhase()">▶</button>`:`<button class="pt-btn" onclick="resetPhase()">↺</button>`}</div></div>`;
-    // Editable start date — lets you correct the phase start to the actual date
     if(wks!==null){
-      h+=`<div style="display:flex;align-items:center;gap:8px;margin:-4px 0 12px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:9px">
+      ref+=`<div style="display:flex;align-items:center;gap:8px;margin:-4px 0 12px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:9px">
         <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">📅 Adjust start date:</span>
         <input type="date" value="${getPhaseStart(S.activeCage,S.activePhase)}" max="${fmtDate(today())}"
           onchange="setPhaseStartDate(this.value)"
@@ -947,26 +935,34 @@ function rTracker(){
     }
   }
 
+  // ── ACTION CARDS (phase-specific, time-sensitive — shown near the top) ──
+  let act='';
+  // Show-week conditioning alerts
+  if(isShow && dShow!==null && dShow>=0){
+    if(showWeek){
+      act+=`<div class="alert warn" style="margin:0 0 12px">🏆 SHOW WEEK — ease conditioning, keep gut clean, settle feather. Friday = travel prep.</div>`;
+    } else {
+      act+=`<div class="alert" style="margin:0 0 12px;background:color-mix(in srgb,var(--cur) 12%,transparent);border:1px solid color-mix(in srgb,var(--cur) 30%,transparent);color:var(--cur)">✓ CONDITIONING — build feather sheen & show-cage calmness. Show week prep begins at 7 days out.</div>`;
+    }
+  }
   // Loading-week banner for Phase 2
   if(hasLoading){
     const dToday=wks!==null?daysSinceStartForDate(S.activeCage,fmtDate(today()),S.activePhase):null;
     if(loadingStatus==='loading'){
       const left=7-(dToday||0);
-      h+=`<div class="alert warn" style="margin:0 0 12px">⚡ LOADING — Ornisol Sel E daily · day ${(dToday||0)+1} of 7 (${left} day${left===1?'':'s'} left)</div>`;
+      act+=`<div class="alert warn" style="margin:0 0 12px">⚡ LOADING — Ornisol Sel E daily · day ${(dToday||0)+1} of 7 (${left} day${left===1?'':'s'} left)</div>`;
     } else if(loadingStatus==='post'){
-      h+=`<div class="alert" style="margin:0 0 12px;background:color-mix(in srgb,var(--cur) 12%,transparent);border:1px solid color-mix(in srgb,var(--cur) 30%,transparent);color:var(--cur)">✓ POST-LOADING — Ornisol ~2×/week + Calcium+D3 before first egg</div>`;
+      act+=`<div class="alert" style="margin:0 0 12px;background:color-mix(in srgb,var(--cur) 12%,transparent);border:1px solid color-mix(in srgb,var(--cur) 30%,transparent);color:var(--cur)">✓ POST-LOADING — Ornisol ~2×/week + Calcium+D3 before first egg</div>`;
     } else {
-      h+=`<div class="alert warn" style="margin:0 0 12px">⚡ Press ▶ to start — then Ornisol Sel E runs daily for 7 days</div>`;
+      act+=`<div class="alert warn" style="margin:0 0 12px">⚡ Press ▶ to start — then Ornisol Sel E runs daily for 7 days</div>`;
     }
-    // Egg-laid button: show as soon as phase is started (day 0+).
-    // A hen can lay anytime — don't gate it behind loading completion.
     if(wks!==null){
       const eggDate=getEggDate(S.activeCage);
       if(eggDate){
         const ed=new Date(eggDate+'T00:00:00');
         const daysSinceEgg=Math.round((today()-ed)/(864e5));
         const expHatch=new Date(ed);expHatch.setDate(ed.getDate()+18);
-        h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        act+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
           <div>
             <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:3px">🥚 FIRST EGG RECORDED</div>
             <div style="font-size:13px;color:var(--text)">${fmtDisp(ed)} · day ${daysSinceEgg+1} of incubation</div>
@@ -975,29 +971,27 @@ function rTracker(){
           <button onclick="eggLaidClear()" style="background:none;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:11px;font-family:'DM Mono',monospace;padding:5px 9px;cursor:pointer">✕ Clear</button>
         </div>`;
       } else {
-        h+=`<button onclick="eggLaid()" style="width:100%;padding:13px;border-radius:12px;border:2px solid var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent);color:var(--gold);font-size:14px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+        act+=`<button onclick="eggLaid()" style="width:100%;padding:13px;border-radius:12px;border:2px solid var(--gold);background:color-mix(in srgb,var(--gold) 10%,transparent);color:var(--gold);font-size:14px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
           🥚 First Egg Laid — tap to switch to Egg Laying
         </button>`;
       }
     }
   }
-  // Phase 3 (Egg Laying): show clutch progress + button to move to Incubation when hen starts sitting
+  // Phase 3 (Egg Laying): clutch progress + button to Incubation
   if(S.activePhase===3){
-    const eggDate=getEggDate(S.activeCage);
     const cl=ls.getJ(`av|clutch|c${S.activeCage}`,[]);
     let eggCount=0;
     cl.forEach(c=>c.eggs.forEach(e=>{if(e.layDate)eggCount++;}));
-    h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #d98ae0;border-radius:10px;padding:12px 14px;margin-bottom:10px">
+    act+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid #d98ae0;border-radius:10px;padding:12px 14px;margin-bottom:10px">
       <div style="font-family:'DM Mono',monospace;font-size:9px;color:#d98ae0;letter-spacing:2px;margin-bottom:4px">🥚 EGG LAYING — ACTIVE CLUTCH</div>
       <div style="font-size:13px;color:var(--text)">${eggCount>0?eggCount+' egg'+(eggCount>1?'s':'')+' laid so far':'Hen is laying — log each egg in the Clutch tab'}</div>
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px">💧 Liquid Calcium + D3 in water Sat/Tue/Fri during active laying — protects against egg-binding</div>
     </div>`;
-    // Button to move from Egg Laying → Incubation (when clutch complete & hen sitting tight)
-    h+=`<button onclick="startIncubation()" style="width:100%;padding:13px;border-radius:12px;border:2px solid var(--p3);background:color-mix(in srgb,var(--p3) 10%,transparent);color:var(--p3);font-size:14px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+    act+=`<button onclick="startIncubation()" style="width:100%;padding:13px;border-radius:12px;border:2px solid var(--p3);background:color-mix(in srgb,var(--p3) 10%,transparent);color:var(--p3);font-size:14px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
       🪺 Clutch complete / hen sitting — switch to Incubation
     </button>`;
   }
-  // Phase 4 (Incubation): show egg-laid info + hatch countdown
+  // Phase 4 (Incubation): hatch countdown + button to Rearing
   if(S.activePhase===4){
     const eggDate=getEggDate(S.activeCage);
     if(eggDate){
@@ -1005,7 +999,7 @@ function rTracker(){
       const daysSince=Math.round((today()-ed)/(864e5));
       const expHatch=new Date(ed);expHatch.setDate(ed.getDate()+18);
       const daysToHatch=Math.round((expHatch-today())/(864e5));
-      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+      act+=`<div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:10px;padding:12px 14px;margin-bottom:10px">
         <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:4px">🥚 INCUBATION TRACKER</div>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
@@ -1020,13 +1014,59 @@ function rTracker(){
         </div>
       </div>`;
     }
-    // Hatch button — switch to Rearing when chicks hatch
-    h+=`<button onclick="chicksHatched()" style="width:100%;padding:13px;border-radius:12px;border:2px solid var(--p3);background:color-mix(in srgb,var(--p3) 10%,transparent);color:var(--p3);font-size:14px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+    act+=`<button onclick="chicksHatched()" style="width:100%;padding:13px;border-radius:12px;border:2px solid var(--p3);background:color-mix(in srgb,var(--p3) 10%,transparent);color:var(--p3);font-size:14px;font-family:'DM Mono',monospace;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
       🐣 Chicks Hatched — switch to Rearing
     </button>`;
   }
 
-  h+=`<div class="week-nav"><button onclick="chgWeek(-1)">‹</button>
+  // ── Build the per-cage reminders panel (for the side column) ──
+  // Reuse the same alert logic but just for this cage, shown compactly.
+  let remHtml='';
+  {
+    const rem=[];
+    const i=S.activeCage;
+    const dayName=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][today().getDay()];
+    // Laying calcium
+    if(getCagePhase(i)===3 && (dayName==='Sat'||dayName==='Tue'||dayName==='Fri')){
+      rem.push({t:'warn',m:`💧 Add Liquid Calcium + D3 to water today (${dayName})`});
+    }
+    // Hatch approaching
+    if(getCagePhase(i)===4){const ed=getEggDate(i);if(ed){const dth=Math.round((new Date(ed+'T00:00:00').setDate(new Date(ed+'T00:00:00').getDate()+18)-today())/(864e5));if(dth<=2&&dth>=0)rem.push({t:'warn',m:`🐣 Hatch ${dth===0?'TODAY':dth+'d away'} — prepare nest`});}}
+    const cl=ls.getJ(`av|clutch|c${i}`,[]);
+    // Fertility candling
+    let pend=[];cl.forEach(c=>c.eggs.forEach((e,ei)=>{if(e.layDate&&(!e.status||e.status==='unknown')){const d=Math.round((today()-new Date(e.layDate+'T00:00:00'))/(864e5));if(d>=6&&d<=9)pend.push('E'+(ei+1));}}));
+    if(pend.length)rem.push({t:'info',m:`🕯️ Candle ${pend.join(', ')} — check fertility`});
+    // Ringing
+    let rD=[],rS=[],rU=[];cl.forEach(c=>c.eggs.forEach((e,ei)=>{if(e.status==='hatched'&&e.hatchedOn&&!e.ringed){const a=Math.round((today()-new Date(e.hatchedOn+'T00:00:00'))/(864e5));if(a>=6&&a<=8)rD.push('E'+(ei+1));else if(a===5)rS.push('E'+(ei+1));else if(a>=9&&a<=10)rU.push('E'+(ei+1));}}));
+    if(rS.length)rem.push({t:'info',m:`💍 ${rS.join(', ')} ready to ring tomorrow`});
+    if(rD.length)rem.push({t:'warn',m:`💍 RING ${rD.join(', ')} now — ideal window`});
+    if(rU.length)rem.push({t:'danger',m:`💍 Ring ${rU.join(', ')} TODAY — window closing`});
+    // Millet
+    let mD=[],mO=[];cl.forEach(c=>c.eggs.forEach((e,ei)=>{if(e.status==='hatched'&&e.hatchedOn){const a=Math.round((today()-new Date(e.hatchedOn+'T00:00:00'))/(864e5));if(a===21)mD.push('E'+(ei+1));else if(a>21&&a<=35)mO.push('E'+(ei+1));}}));
+    if(mD.length)rem.push({t:'warn',m:`🌾 Place spray millet in nest — chicks learning to eat`});
+    else if(mO.length)rem.push({t:'info',m:`🌾 Keep millet in nest until chicks fledge`});
+    // Shavings
+    if(getCagePhase(i)===5){const hasC=cl.some(c=>c.eggs.some(e=>e.status==='hatched'&&e.hatchedOn));if(hasC){const lr=ls.get(`av|shavings|c${i}`);const ds=lr?Math.round((today()-new Date(lr+'T00:00:00'))/(864e5)):99;if(ds>=5)rem.push({t:'warn',m:`🪵 Refresh wood shavings — prevents splayed legs`});}}
+    // Phase overdue
+    {const p=getCagePhase(i);const w=weeksInPhase(i,p);if(w!==null&&p!==7){const max=PHASES[p].max;if(w>=max)rem.push({t:'danger',m:`⏰ Week ${w} — phase transition overdue!`});else if(w>=max-1)rem.push({t:'warn',m:`⏰ Week ${w}/${max} — phase ending soon`});}}
+
+    if(rem.length){
+      remHtml=`<div style="margin-bottom:14px"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:8px">🔔 REMINDERS — ${CAGES[i].toUpperCase()}</div>`;
+      rem.forEach(r=>{
+        const col=r.t==='danger'?'var(--danger)':r.t==='warn'?'var(--warn)':'var(--cur)';
+        remHtml+=`<div style="background:color-mix(in srgb,${col} 8%,var(--surface));border:1px solid color-mix(in srgb,${col} 25%,transparent);border-left:3px solid ${col};border-radius:8px;padding:8px 11px;margin-bottom:7px;font-size:11px;color:${col};line-height:1.4">${r.m}</div>`;
+      });
+      remHtml+=`</div>`;
+    } else {
+      remHtml=`<div style="margin-bottom:14px"><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:8px">🔔 REMINDERS — ${CAGES[i].toUpperCase()}</div>
+        <div style="font-size:11px;color:var(--muted);font-style:italic;padding:4px 0">No reminders right now — all clear ✓</div></div>`;
+    }
+  }
+
+  // ── ASSEMBLE: two-column layout (week view | info+reminders side panel) ──
+  // The side panel holds the phase info (ref), action cards (act), and reminders.
+  // CSS makes it a right column in landscape and stacks it below in portrait.
+  let weekCol=`<div class="week-nav"><button onclick="chgWeek(-1)">‹</button>
   <div class="wk-lbl">${S.weekOffset===0?'📅 This Week':S.weekOffset===-1?'← Last Week':S.weekOffset===1?'→ Next Week':S.weekOffset>1?`+${S.weekOffset} weeks ahead`:`${Math.abs(S.weekOffset)}w ago`}<small>${fmtDisp(wS)} – ${fmtDisp(wE)}</small></div>
   <button onclick="chgWeek(1)"${S.weekOffset>=4?' disabled style="opacity:.3"':''}>›</button></div>`;
   weeks.forEach(({name,date,dateStr,isToday})=>{
@@ -1066,7 +1106,7 @@ function rTracker(){
     const all=cSF&&cSD&&cWT&&cEX;
     const isFuture=new Date(dateStr+'T00:00:00')>today()&&!isToday;
     const note=getNotes(S.activeCage,dateStr);
-    h+=`<div class="day-row${isToday?' today':''}" style="${isShowDay?'border-color:var(--gold);box-shadow:0 0 20px rgba(192,160,32,.25);':isFuture?'opacity:0.6;':''}">
+    weekCol+=`<div class="day-row${isToday?' today':''}" style="${isShowDay?'border-color:var(--gold);box-shadow:0 0 20px rgba(192,160,32,.25);':isFuture?'opacity:0.6;':''}">
     <div class="day-hdr"><span class="day-name">${name}</span>
     ${isToday?'<span class="today-badge">TODAY</span>':''}
     ${isShowDay?'<span class="today-badge" style="background:var(--gold)">🏆 SHOW</span>':''}
@@ -1082,6 +1122,11 @@ function rTracker(){
     </div>`}
     </div></div>`;
   });
+  // Side panel = phase info/settings first, then reminders, then action cards
+  const sideCol=`<div style="margin-bottom:14px">
+    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin:0 0 10px">ℹ️ PHASE INFO & SETTINGS</div>${ref}</div>${remHtml}${act}`;
+  // Wrap into the two-column grid
+  h+=`<div class="tracker-cols"><div class="tracker-week">${weekCol}</div><div class="tracker-side">${sideCol}</div></div>`;
   return h;
 }
 
